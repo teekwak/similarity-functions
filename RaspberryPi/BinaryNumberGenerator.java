@@ -2,16 +2,34 @@ package RaspberryPi;
 
 import java.io.PrintWriter;
 
+// generates 32 files with 2913 numbers and 13 files with 2912 ==> 131072
 public class BinaryNumberGenerator {
 	public static void printPaddedBinaryNumbers() {
 		try {
-			PrintWriter pw = new PrintWriter("Output/testfile.txt", "UTF-8");
-			for(int i = 1; i < 131072; i++)	{
-				String unpadded = Integer.toBinaryString(i);
-				String padded = "00000000000000000".substring(unpadded.length()) + unpadded;
-				pw.println(padded);
+			int counter = 0;
+
+			for(int i = 1; i <= 45; i++) {
+				PrintWriter pw = new PrintWriter("Output/testfile_" + i + ".txt", "UTF-8");
+
+				if(i <= 32) {
+					for(int j = 1; j <= 2913; j++) {
+						String unpadded = Integer.toBinaryString(counter);
+						String padded = "00000000000000000".substring(unpadded.length()) + unpadded;
+						pw.println(padded);
+						counter++;
+					}
+				}
+				else {
+					for(int j = 1; j <= 2912; j++) {
+						String unpadded = Integer.toBinaryString(counter);
+						String padded = "00000000000000000".substring(unpadded.length()) + unpadded;
+						pw.println(padded);
+						counter++;
+					}
+				}
+
+				pw.close();
 			}
-			pw.close();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}	
