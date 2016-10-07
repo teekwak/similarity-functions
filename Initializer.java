@@ -18,22 +18,21 @@ public class Initializer {
 		Scanner sc = new Scanner(System.in);
 		String ans = sc.nextLine();
 		switch(ans) {
-			case "a": {
+			case "a": 
 				MultipleFileReader.main(null);
-			}
-			case "b": {
+				break;
+			case "b": 
 				BinaryNumberGenerator.main(null);
-			}
-			case "c": {
+				break;
+			case "c": 
 				ConfiguredMiner.main(null);
-			}
-			case "d": {
+				break;
+			case "d": 
 				PiQuerySender.main(null);
-			}
-			default: {
+				break;
+			default:
 				System.out.println("Exiting program...");
 				break;
-			}
 		}
 	}
 }
