@@ -36,11 +36,18 @@ public class PiQuerySender {
 	public static int sendQuery(String bitVector, String keyword) {
 		// System.out.println("Sending query: " + bitVector + " + " + keyword);
 		// System.out.println("Received result: " + 1);
+		if(keyword.equals("firstKeyWord")) {
+			return 3;
+		}
+		else if(keyword.equals("secondKeyWord")) {
+			return 2;
+		}
+
 		return 1;
 	}
 
 	public static void main(String[] args) {
-		File bitVectorFile = new File("Output/testfile.txt");
+		File bitVectorFile = new File("Output/testfile_1.txt");
 
 		// read bitVectorFile
 		try {
