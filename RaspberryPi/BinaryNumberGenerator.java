@@ -9,7 +9,7 @@ public class BinaryNumberGenerator {
 			int counter = 0;
 
 			for(int i = 1; i <= 45; i++) {
-				PrintWriter pw = new PrintWriter("Output/testfile_" + i + ".txt", "UTF-8");
+				PrintWriter pw = new PrintWriter("Output/pi" + i + "_binaryNumbersList.txt", "UTF-8");
 
 				if(i <= 32) {
 					for(int j = 1; j <= 2913; j++) {
