@@ -8,11 +8,11 @@ public class BinaryNumberGenerator {
 		try {
 			int counter = 0;
 
-			for(int i = 1; i <= 45; i++) {
+			for(int i = 1; i <= 42; i++) {
 				PrintWriter pw = new PrintWriter("Output/pi" + i + "_binaryNumbersList.txt", "UTF-8");
 
 				if(i <= 32) {
-					for(int j = 1; j <= 2913; j++) {
+					for(int j = 1; j <= 3121; j++) {
 						String unpadded = Integer.toBinaryString(counter);
 						String padded = "00000000000000000".substring(unpadded.length()) + unpadded;
 						pw.println(padded);
@@ -20,7 +20,7 @@ public class BinaryNumberGenerator {
 					}
 				}
 				else {
-					for(int j = 1; j <= 2912; j++) {
+					for(int j = 1; j <= 3120; j++) {
 						String unpadded = Integer.toBinaryString(counter);
 						String padded = "00000000000000000".substring(unpadded.length()) + unpadded;
 						pw.println(padded);
