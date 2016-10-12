@@ -57,6 +57,12 @@ public class PiQuerySender {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
 	}
 
 	// dummy function
@@ -65,7 +71,7 @@ public class PiQuerySender {
 			StringBuilder querySb = new StringBuilder();
 			querySb.append("http://grok.ics.uci.edu:9551/solr/MoreLikeThisIndex/sim/?q=snippet_code:(");
 			querySb.append(keywords);
-			querySb.append(")+AND+snippet_number_of_functions:[1+TO+*]+AND+parent:true+AND+snippet_is_innerClass:false+AND+snippet_is_anonymous:false&start=0&fl=id&indent=on&wt=json&started=false&test=false&conciseCount=100&bitvector=");
+			querySb.append(")+AND+snippet_number_of_functions:[1+TO+*]+AND+parent:true+AND+snippet_is_innerClass:false+AND+snippet_is_anonymous:false&start=0&fl=id&indent=on&wt=json&rows=1000&started=false&test=false&conciseCount=100&bitvector=");
 			querySb.append(bitvector);
 
 			System.out.println(querySb.toString());
@@ -110,16 +116,23 @@ public class PiQuerySender {
 		long a = System.currentTimeMillis();
 
 		// read bitVectorFile
-		try {
-			BufferedReader br = new BufferedReader(new FileReader(bitVectorFile));
+//		try {
+//			BufferedReader br = new BufferedReader(new FileReader(bitVectorFile));
+//
+//			for(String line; (line = br.readLine()) != null; ) {
+//				for(String keyword : PiQuerySender.keywordsArray) {
+//					storeResults(line, keyword, sendQuery(keyword, line));
+//				}
+//			}
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
 
-			for(String line; (line = br.readLine()) != null; ) {
-				for(String keyword : PiQuerySender.keywordsArray) {
-					storeResults(line, keyword, sendQuery(keyword, line));
-				}
-			}	
-		} catch (IOException e) {
-			e.printStackTrace();
+		// test
+		String bitvector = "11111111111111111";
+
+		for(String keyword : PiQuerySender.keywordsArray) {
+			storeResults(bitvector, keyword, sendQuery(keyword, bitvector));
 		}
 
 		long b = System.currentTimeMillis();

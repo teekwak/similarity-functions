@@ -1,5 +1,6 @@
 // import Server.*;
 import RaspberryPi.*;
+import Server.*;
 import DataAnalysis.*;
 import Extra.*;
 
@@ -13,6 +14,8 @@ public class Initializer {
 		System.out.println("b) BinaryNumberGenerator");
 		System.out.println("c) ConfiguredMiner");
 		System.out.println("d) PiQuerySender");
+		System.out.println("e) GroundTruthGenerator");
+		System.out.println("f) CacheTest");
 		System.out.println("y) Clean Project");
 		System.out.println("z) Exit\n");
 		
@@ -31,6 +34,12 @@ public class Initializer {
 				break;
 			case "d": 
 				PiQuerySender.main(null);
+				break;
+			case "e":
+				GroundTruthGenerator.main(null);
+				break;
+			case "f":
+				CacheTest.main(null);
 				break;
 			case "y":
 				Cleaner.main(null);
