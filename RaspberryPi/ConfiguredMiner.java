@@ -10,30 +10,28 @@ import java.io.*;
 public class ConfiguredMiner {
 	public static Map<String, Boolean> flagMap;
 
-	public static void mineWithConfiguration() {
-		// this is where the mining will start
-		// need file reader here to read in the URLs
-
-//		for(Map.Entry<String, Boolean> entry : flagMap.entrySet()) {
-//			System.out.println(entry.getKey() + " -> " + entry.getValue());
-//		}
-
+	public static void mineWithConfiguration(String keywords, String bitvector) {
 		try {
-			StringBuilder sb = new StringBuilder();
+			StringBuilder querySb = new StringBuilder();
+			querySb.append("http://grok.ics.uci.edu:9551/solr/MoreLikeThisIndex/sim/?q=snippet_code:(");
+			querySb.append(keywords);
+			querySb.append(")+AND+snippet_number_of_functions:[1+TO+*]+AND+parent:true+AND+snippet_is_innerClass:false+AND+snippet_is_anonymous:false&start=0&fl=id&rows=300&indent=on&wt=json&started=false&test=false&conciseCount=100&bitvector=");
+			querySb.append(bitvector);
 
-			URL url = new URL("http://grok.ics.uci.edu:9551/solr/MoreLikeThisIndex/sim?q=snippet_code%3A(quick+OR+sort)&fl=id&wt=json&indent=true&bitvector=" + "11111111111111111");
+			// REALLY GOTTA CHANGE THE URL TO THE CORRECT ONE
+			URL url = new URL(querySb.toString());
 
+			StringBuilder responseSb = new StringBuilder();
 			BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
 			for (String line; (line = br.readLine()) != null;) {
-				System.out.println(line);
-				sb.append(line);
+				responseSb.append(line);
 			}
 
 			System.out.println("************");
 			JsonParser parser = new JsonParser();
-			JsonElement element = parser.parse(sb.toString());
+			JsonElement element = parser.parse(responseSb.toString());
 			if(element.isJsonObject()) {
-				// print out single respones by key
+				// print out single response by key
 				JsonObject response = element.getAsJsonObject();
 				System.out.println(response.get("OverlapNumber").getAsString());
 
@@ -44,14 +42,9 @@ public class ConfiguredMiner {
 					System.out.println(dataset.get("id").getAsString());
 				}
 			}
-
-
-		} catch (MalformedURLException e) {
-			e.printStackTrace();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
 	}
 
 	public static void main(String[] args) {
@@ -59,27 +52,44 @@ public class ConfiguredMiner {
 		// need to separate the URLs across pis
 
 		// given a bit vector
-		String bitVector = "11111111111111111";
-		flagMap = new HashMap<>();
+		String bitvector = "11111111111101111";
+		String[] keywordsArray = new String[] {
+						"database+OR+connection+OR+manager",
+						"ftp+OR+client",
+						"quick+OR+sort",
+						"depth+OR+first+OR+search",
+						"tic+OR+tac+OR+toe",
+						"api+OR+amazon",
+						"mail+OR+sender",
+						"array+OR+multiplication",
+						"algorithm+OR+for+OR+parsing+OR+string+OR+integer",
+						"binary+OR+search+OR+tree",
+						"file+OR+writer",
+						"regular+OR+expressions",
+						"concatenating+OR+strings",
+						"awt+OR+events",
+						"date+OR+arithmetic",
+						"JSpinner",
+						"prime+OR+factors",
+						"fibonacci",
+						"combinations+OR+n+OR+per+OR+k",
+						"input+OR+stream+OR+to+OR+byte+OR+array",
+						"spring+OR+rest+OR+template"
+		};
 
-		flagMap.put("authorName", bitVector.charAt(0) == '1');
-		flagMap.put("className", bitVector.charAt(1) == '1');
-		flagMap.put("complexity", bitVector.charAt(2) == '1');
-		flagMap.put("fields", bitVector.charAt(3) == '1');
-		flagMap.put("hasWildCard", bitVector.charAt(4) == '1');
-		flagMap.put("isAbstract", bitVector.charAt(5) == '1');
-		flagMap.put("isGeneric", bitVector.charAt(6) == '1');
-		flagMap.put("imports", bitVector.charAt(7) == '1');
-		flagMap.put("inverseImports", bitVector.charAt(8) == '1');			// check with Lee on this one
-		flagMap.put("methodCallNames", bitVector.charAt(9) == '1');
-		flagMap.put("methodDecNames", bitVector.charAt(10) == '1');
-		flagMap.put("ownerName", bitVector.charAt(11) == '1');
-		flagMap.put("package", bitVector.charAt(12) == '1');
-		flagMap.put("parentClass", bitVector.charAt(13) == '1');
-		flagMap.put("projectName", bitVector.charAt(14) == '1');
-		flagMap.put("size", bitVector.charAt(15) == '1');
-		flagMap.put("variableWords", bitVector.charAt(16) == '1');
+		long a = System.currentTimeMillis();
 
-		mineWithConfiguration();
+		for(String keywords : keywordsArray) {
+			// lessen load for testing
+			if(keywords.equals("binary+OR+search+OR+tree")) {
+				mineWithConfiguration(keywords, bitvector);
+			}
+
+			// mineWithConfiguration(keywords, bitvector);
+		}
+
+		long b = System.currentTimeMillis();
+
+		System.out.println("Process time: " + (b-a) + "ms");
 	}
 }
