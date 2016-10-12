@@ -1,7 +1,11 @@
 package RaspberryPi;
 
+import com.google.gson.*;
+
 import java.util.Map;
 import java.util.HashMap;
+import java.net.*;
+import java.io.*;
 
 public class ConfiguredMiner {
 	public static Map<String, Boolean> flagMap;
@@ -10,16 +14,52 @@ public class ConfiguredMiner {
 		// this is where the mining will start
 		// need file reader here to read in the URLs
 
-		for(Map.Entry<String, Boolean> entry : flagMap.entrySet()) {
-			System.out.println(entry.getKey() + " -> " + entry.getValue());
+//		for(Map.Entry<String, Boolean> entry : flagMap.entrySet()) {
+//			System.out.println(entry.getKey() + " -> " + entry.getValue());
+//		}
+
+		try {
+			StringBuilder sb = new StringBuilder();
+
+			URL url = new URL("http://grok.ics.uci.edu:9551/solr/MoreLikeThisIndex/sim?q=snippet_code%3A(quick+OR+sort)&fl=id&wt=json&indent=true&bitvector=" + "11111111111111111");
+
+			BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
+			for (String line; (line = br.readLine()) != null;) {
+				System.out.println(line);
+				sb.append(line);
+			}
+
+			System.out.println("************");
+			JsonParser parser = new JsonParser();
+			JsonElement element = parser.parse(sb.toString());
+			if(element.isJsonObject()) {
+				// print out single respones by key
+				JsonObject response = element.getAsJsonObject();
+				System.out.println(response.get("OverlapNumber").getAsString());
+
+				// iterate over map (not required)
+				JsonArray hybridExemplarsContents = response.getAsJsonArray("HybridExemplarsContents");
+				for(int i = 0; i < hybridExemplarsContents.size(); i++) {
+					JsonObject dataset = hybridExemplarsContents.get(i).getAsJsonObject();
+					System.out.println(dataset.get("id").getAsString());
+				}
+			}
+
+
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
+
 	}
 
 	public static void main(String[] args) {
 		// take in a config file
 		// need to separate the URLs across pis
 
-		String bitVector = "10000000000000001";
+		// given a bit vector
+		String bitVector = "11111111111111111";
 		flagMap = new HashMap<>();
 
 		flagMap.put("authorName", bitVector.charAt(0) == '1');
