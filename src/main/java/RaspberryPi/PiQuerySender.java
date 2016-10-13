@@ -46,7 +46,7 @@ public class PiQuerySender {
 		sb.append(overlapTotal);
 
 		try (
-			FileWriter fw = new FileWriter("piOutputFile.txt", true);
+			FileWriter fw = new FileWriter("pi1_OutputFile.txt", true);
 			BufferedWriter bw = new BufferedWriter(fw);
 			PrintWriter pw = new PrintWriter(bw)) 
 		{
@@ -111,7 +111,7 @@ public class PiQuerySender {
 	}
 
 	public static void main(String[] args) {
-		File bitVectorFile = new File("Output/pi1_binaryNumbersList.txt");
+		File bitVectorFile = new File("java_output/pi1_binaryNumbersList.txt");
 
 		long a = System.currentTimeMillis();
 
