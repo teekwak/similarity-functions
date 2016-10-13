@@ -11,10 +11,14 @@ import com.google.gson.*;
 
 import java.net.*;
 import java.io.*;
+import java.util.HashSet;
 import java.util.InputMismatchException;
 import java.util.Scanner;
+import java.util.Set;
 
 public class PiQuerySender {
+	public static Set<String> sim2Set;
+
 	public static String[] keywordsArray = new String[] {
 		"database+OR+connection+OR+manager",
 		"ftp+OR+client",
@@ -62,19 +66,10 @@ public class PiQuerySender {
 		}
 	}
 
-	// dummy function
+	// send query and calculate differences
 	public static int sendQuery(String keywords, String bitvector) {
 		try {
-			StringBuilder querySb = new StringBuilder();
-			querySb.append("http://grok.ics.uci.edu:9551/solr/MoreLikeThisIndex/sim/?q=snippet_code:(");
-			querySb.append(keywords);
-			querySb.append(")+AND+snippet_number_of_functions:[1+TO+*]+AND+parent:true+AND+snippet_is_innerClass:false+AND+snippet_is_anonymous:false&start=0&fl=id&indent=on&wt=json&rows=1000&started=false&test=false&conciseCount=100&bitvector=");
-			querySb.append(bitvector);
-
-			// System.out.println(querySb.toString());
-
-			// REALLY GOTTA CHANGE THE URL TO THE CORRECT ONE
-			URL url = new URL(querySb.toString());
+			URL url = new URL("http://grok.ics.uci.edu:9551/solr/MoreLikeThisIndex/sim/?q=snippet_code:(" + keywords + ")+AND+snippet_number_of_functions:[1+TO+*]+AND+parent:true+AND+snippet_is_innerClass:false+AND+snippet_is_anonymous:false&start=0&fl=id&indent=on&wt=json&rows=1000&started=false&test=false&conciseCount=100&bitvector=" + bitvector);
 
 			StringBuilder responseSb = new StringBuilder();
 			BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
@@ -82,23 +77,26 @@ public class PiQuerySender {
 				responseSb.append(line);
 			}
 
-			// System.out.println("************");
 			JsonParser parser = new JsonParser();
 			JsonElement element = parser.parse(responseSb.toString());
 			if(element.isJsonObject()) {
-				// print out single response by key
+				Set<String> generatedSet = new HashSet<>();
+
 				JsonObject response = element.getAsJsonObject();
-				// System.out.println("OverlapNumber: " + response.get("OverlapNumber").getAsString());
+				JsonArray hybridExemplars = response.getAsJsonArray("HybridExemplars");
+				for(int i = 0; i < hybridExemplars.size(); i++) {
+					generatedSet.add(hybridExemplars.get(i).getAsString());
+				}
 
+				// do set comparison here
+				int differences = 0;
+				for(String s : sim2Set) {
+					if(!generatedSet.contains(s)) {
+						differences++;
+					}
+				}
 
-				// iterate over map (not required)
-//				JsonArray hybridExemplarsContents = response.getAsJsonArray("HybridExemplarsContents");
-//				for(int i = 0; i < hybridExemplarsContents.size(); i++) {
-//					JsonObject dataset = hybridExemplarsContents.get(i).getAsJsonObject();
-//					System.out.println(dataset.get("id").getAsString());
-//				}
-
-				return response.get("OverlapNumber").getAsInt();
+				return differences;
 			}
 
 			} catch (IOException e) {
@@ -106,6 +104,37 @@ public class PiQuerySender {
 			}
 
 		return -1;
+	}
+
+	public static Set<String> generateSim2Set(String keyword) {
+		try {
+			URL url = new URL("http://grok.ics.uci.edu:9551/solr/MoreLikeThisIndex/sim/?q=snippet_code:(" + keyword + ")+AND+snippet_number_of_functions:[1+TO+*]+AND+parent:true+AND+snippet_is_innerClass:false+AND+snippet_is_anonymous:false&start=0&fl=id&indent=on&wt=json&rows=1000&started=false&test=false&conciseCount=100&bitvector=11111111111111111");
+
+			StringBuilder responseSb = new StringBuilder();
+			BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
+			for (String line; (line = br.readLine()) != null;) {
+				responseSb.append(line);
+			}
+
+			JsonParser parser = new JsonParser();
+			JsonElement element = parser.parse(responseSb.toString());
+			if(element.isJsonObject()) {
+				Set<String> generatedSet = new HashSet<>();
+
+				JsonObject response = element.getAsJsonObject();
+				JsonArray hybridExemplars = response.getAsJsonArray("HybridExemplars");
+				for(int i = 0; i < hybridExemplars.size(); i++) {
+					generatedSet.add(hybridExemplars.get(i).getAsString());
+				}
+
+				return generatedSet;
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return null;
 	}
 
 	public static void generateProgressBar(int count, int maxCount) {
@@ -142,6 +171,9 @@ public class PiQuerySender {
 
 			long a = System.currentTimeMillis();
 
+
+
+
 			// read bitVectorFile
 //		try {
 //			BufferedReader br = new BufferedReader(new FileReader(bitVectorFile));
@@ -155,6 +187,17 @@ public class PiQuerySender {
 //			e.printStackTrace();
 //		}
 
+
+
+
+			// generate sim2Set
+			sim2Set = generateSim2Set(keywordsArray[0]);
+
+			if(sim2Set == null) {
+				System.out.println("[ERROR]: sim2Set is empty");
+				return;
+			}
+
 			// test
 			int counter = 0;
 
@@ -163,10 +206,11 @@ public class PiQuerySender {
 
 				for(String line; (line = br.readLine()) != null; ) {
 					if(counter < 100) {
-						storeResults(line, keywordsArray[1], sendQuery(keywordsArray[1], line), piNumber);
+						storeResults(line, keywordsArray[0], sendQuery(keywordsArray[0], line), piNumber);
 						generateProgressBar(counter, 100);
 						counter++;
 					}
+					// generate the max progress bar
 					generateProgressBar(counter, 100);
 				}
 
