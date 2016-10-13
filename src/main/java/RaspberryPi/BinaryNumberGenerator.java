@@ -1,76 +1,89 @@
 package RaspberryPi;
 
+import Extra.Cleaner;
+
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.InputMismatchException;
+import java.util.Scanner;
 
-// generates 32 files with 2913 numbers and 13 files with 2912 ==> 131072
 public class BinaryNumberGenerator {
-	public static void printPaddedBinaryNumbers(int n) {
-		if(n == 2) {
-			 try {
-				 PrintWriter pw = new PrintWriter("java_output/pi1_binaryNumbersList.txt", "UTF-8");
+	// print binary numbers from 0 to 131072 in a certain number of files as evenly distributed as possible
+	public static void printPaddedBinaryNumbers(int numberOfFilesToCreate) {
+		PrintWriter pw;
 
-				 for(int i = 1; i < 65536; i++) {
-					 String unpadded = Integer.toBinaryString(i);
-					 String padded = "00000000000000000".substring(unpadded.length()) + unpadded;
-					 pw.println(padded);
-				 }
+		// calculate number of lines per file
+		int linesPerFileRoundedDown = 131072 / numberOfFilesToCreate;
+		// calculate how many lines are left
+		int remainder = 131072 - (linesPerFileRoundedDown * numberOfFilesToCreate);
 
-				 pw.close();
+		// counter ranges from 0 to 131071
+		int counter = 0;
 
-				 pw = new PrintWriter("java_output/pi2_binaryNumbersList.txt", "UTF-8");
-
-				 for(int i = 65536; i < 131072; i++) {
-					 String unpadded = Integer.toBinaryString(i);
-					 String padded = "00000000000000000".substring(unpadded.length()) + unpadded;
-					 pw.println(padded);
-				 }
-
-				 pw.close();
-			 } catch (Exception e) {
-				 e.printStackTrace();
-			 }
-		}
-		else if(n == 42){
+		for(int i = 1; i < numberOfFilesToCreate + 1; i++) {
 			try {
-				int counter = 0;
+				int upperBound = counter + linesPerFileRoundedDown - 1;
 
-				for(int i = 1; i <= 42; i++) {
-					PrintWriter pw = new PrintWriter("java_output/pi" + i + "_binaryNumbersList.txt", "UTF-8");
-
-					if(i <= 32) {
-						for(int j = 1; j <= 3121; j++) {
-							String unpadded = Integer.toBinaryString(counter);
-							String padded = "00000000000000000".substring(unpadded.length()) + unpadded;
-							pw.println(padded);
-							counter++;
-						}
-					}
-					else {
-						for(int j = 1; j <= 3120; j++) {
-							String unpadded = Integer.toBinaryString(counter);
-							String padded = "00000000000000000".substring(unpadded.length()) + unpadded;
-							pw.println(padded);
-							counter++;
-						}
-					}
-
-					pw.close();
+				if(remainder > 0) {
+					upperBound++;
+					remainder--;
 				}
+
+				pw = new PrintWriter("java_output/pi" + i + "_binaryNumbersList.txt", "UTF-8");
+
+				while(counter < upperBound + 1) {
+					String unpadded = Integer.toBinaryString(counter);
+					String padded = "00000000000000000".substring(unpadded.length()) + unpadded;
+					pw.println(padded);
+					counter++;
+				}
+
+				pw.close();
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
-		else {
-			System.out.println("Need a number (2, 42)");
+	}
+
+	// checks the number of lines in every file for a certain directory
+	public static void checkNumberOfLinesInFile(String directory) {
+		try {
+			File[] allFiles = new File(directory).listFiles();
+
+			for(File file : allFiles) {
+				long count = Files.lines(Paths.get(file.getAbsolutePath())).count();
+				System.out.println(file.getName() + " -> " + count + " lines");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 
 	public static void main(String[] args) {
-		if(!new File("java_output").exists()) {
-			new File("java_output").mkdir();
+		String output_directory = "java_output";
+
+		if(!new File(output_directory).exists()) {
+			new File(output_directory).mkdir();
+		}
+		Cleaner.deleteAllFilesInDirectory(output_directory);
+
+		System.out.print("Enter the number of binary number files you want to create: ");
+		Scanner sc = new Scanner(System.in);
+		try {
+			int input = sc.nextInt();
+
+			if(input > 131072) {
+				throw new InputMismatchException("[ERROR]: You entered a number too high!");
+			}
+
+			printPaddedBinaryNumbers(input);
+		} catch (InputMismatchException e) {
+			System.out.println("[ERROR]: You entered something that was not a number...");
 		}
 
-		printPaddedBinaryNumbers(2);
+		checkNumberOfLinesInFile(output_directory);
 	}
 }

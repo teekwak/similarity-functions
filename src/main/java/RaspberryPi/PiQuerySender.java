@@ -57,12 +57,6 @@ public class PiQuerySender {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
 	}
 
 	// dummy function
@@ -119,8 +113,8 @@ public class PiQuerySender {
 //		try {
 //			BufferedReader br = new BufferedReader(new FileReader(bitVectorFile));
 //
-//			for(String line; (line = br.readLine()) != null; ) {
-//				for(String keyword : PiQuerySender.keywordsArray) {
+//			for(String keyword : PiQuerySender.keywordsArray) {
+//			  for(String line; (line = br.readLine()) != null; ) {
 //					storeResults(line, keyword, sendQuery(keyword, line));
 //				}
 //			}
@@ -129,10 +123,20 @@ public class PiQuerySender {
 //		}
 
 		// test
-		String bitvector = "11111111111111111";
+		int counter = 0;
 
-		for(String keyword : PiQuerySender.keywordsArray) {
-			storeResults(bitvector, keyword, sendQuery(keyword, bitvector));
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(bitVectorFile));
+
+			for(String line; (line = br.readLine()) != null; ) {
+				if(counter < 100) {
+					storeResults(line, keywordsArray[0], sendQuery(keywordsArray[0], line));
+					counter++;
+				}
+			}
+
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 
 		long b = System.currentTimeMillis();
