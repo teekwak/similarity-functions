@@ -57,7 +57,7 @@ public class PiQuerySender {
 		sb.append(overlapTotal);
 
 		try (
-			FileWriter fw = new FileWriter("pi" + piNumber + "_" + keyword + "_output.txt", true);
+			FileWriter fw = new FileWriter("query_output/pi" + piNumber + "_" + keyword + "_output.txt", true);
 			BufferedWriter bw = new BufferedWriter(fw);
 			PrintWriter pw = new PrintWriter(bw)) 
 		{
@@ -170,6 +170,10 @@ public class PiQuerySender {
 	}
 
 	public static void main(String[] args) {
+		if(!new File("query_output").exists()) {
+			new File("query_output").mkdir();
+		}
+
 		System.out.print("Enter the pi # you are working on: ");
 		Scanner sc = new Scanner(System.in);
 		try {
@@ -184,25 +188,6 @@ public class PiQuerySender {
 
 			long a = System.currentTimeMillis();
 
-
-
-
-			// read bitVectorFile
-//		try {
-//			BufferedReader br = new BufferedReader(new FileReader(bitVectorFile));
-//
-//			for(String keyword : PiQuerySender.keywordsArray) {
-//			  for(String line; (line = br.readLine()) != null; ) {
-//					storeResults(line, keyword, sendQuery(keyword, line));
-//				}
-//			}
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
-
-
-
-
 			// generate sim2Set
 			sim2Set = generateSim2Set(keywordsArray[0]);
 
@@ -211,7 +196,6 @@ public class PiQuerySender {
 				return;
 			}
 
-			// test
 			int counter = 0;
 			int maxCounter = getNumberOfLinesInFile(bitVectorFile);
 

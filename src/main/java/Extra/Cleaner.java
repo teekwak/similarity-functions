@@ -23,6 +23,6 @@ public class Cleaner {
 
 	public static void main(String[] args) {
 		Cleaner.deleteAllFilesInDirectory("./java_output");
-		Cleaner.deleteCertainFileInDirectory("piOutputFile.txt", "./");
+		// Cleaner.deleteCertainFileInDirectory("piOutputFile.txt", "./");
 	}
 }

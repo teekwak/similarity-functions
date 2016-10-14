@@ -1,30 +1,23 @@
 package DataAnalysis;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 
 public class MultipleFileReader {
-	public static void findNeedleInFile(File file, String needle) {
-		int overlapTotal = 0;
-		int numberOfMatches = 0;
-
+	public static int findNeedleInFile(File file, String needle) {
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(file));
 
 			for(String line; (line = br.readLine()) != null; ) {
 				if(line.contains(needle)) {
 					String[] parts = line.split("_");
-					overlapTotal += Integer.parseInt(parts[2]);
-					numberOfMatches++;
+					return Integer.parseInt(parts[1]);
 				}
 			}	
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
 
-		System.out.println("Overlap score for " + needle + ": " + overlapTotal / numberOfMatches);
+		return -1;
 	}
 
 	public static void searchFilesInDirectory(String directoryPath, String extension, String needle) {
@@ -38,21 +31,54 @@ public class MultipleFileReader {
 
 		File[] directoryListing = dir.listFiles();
 
+		int overlapTotal = 0;
+		int occurrences = 0;
 		if(directoryListing != null) {
 			for(File file : directoryListing) {
 				if(file.getName().endsWith(extension)) {
-					findNeedleInFile(file, needle);
+					int temp = findNeedleInFile(file, needle);
+
+					if(temp != -1) {
+						overlapTotal += temp;
+						occurrences += 1;
+					}
 				}
 			}
 		} else {
 			System.out.println(directoryPath + " is empty!");
-			return;
 		}
 
-		System.out.println("* End search");
+		// write average to file if we find 21
+		if(occurrences == 21) {
+			try (
+				FileWriter fw = new FileWriter("java_output/overlapScores.txt", true);
+				BufferedWriter bw = new BufferedWriter(fw);
+				PrintWriter pw = new PrintWriter(bw))
+			{
+				pw.println(needle + "_" + (double)overlapTotal / occurrences);
+				pw.close();
+				bw.close();
+				fw.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	public static void main(String[] args) {
-		searchFilesInDirectory("/Users/Kwak/Desktop/SimilarityFunctions", ".txt", "00000100101110110");
+		String binaryFilePath = "java_output/allBinaryNumbers.txt";
+		String directoryPath = "java_output";
+		String extension = ".txt";
+
+		try {
+			// file = file with all binary numbers
+			BufferedReader br = new BufferedReader(new FileReader(new File(binaryFilePath)));
+
+			for(String line; (line = br.readLine()) != null; ) {
+				searchFilesInDirectory(directoryPath, extension, line);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 }
