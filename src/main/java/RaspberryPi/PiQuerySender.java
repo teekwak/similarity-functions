@@ -11,6 +11,8 @@ import com.google.gson.*;
 
 import java.net.*;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.InputMismatchException;
 import java.util.Scanner;
@@ -43,17 +45,19 @@ public class PiQuerySender {
 		"spring+OR+rest+OR+template"
 	};
 
-	// writes results to file in bitVector_keyword_overlapTotal format
+	// writes results to file in bitVector_overlapTotal format
 	public static void storeResults(String bitVector, String keyword, int overlapTotal, int piNumber) {
+		while(overlapTotal == -1) {
+			overlapTotal = sendQuery(keyword, bitVector);
+		}
+
 		StringBuilder sb = new StringBuilder();
 		sb.append(bitVector);
-		sb.append("_");
-		sb.append(keyword);
 		sb.append("_");
 		sb.append(overlapTotal);
 
 		try (
-			FileWriter fw = new FileWriter("pi" + piNumber + "_OutputFile.txt", true);
+			FileWriter fw = new FileWriter("pi" + piNumber + "_" + keyword + "_output.txt", true);
 			BufferedWriter bw = new BufferedWriter(fw);
 			PrintWriter pw = new PrintWriter(bw)) 
 		{
@@ -89,14 +93,14 @@ public class PiQuerySender {
 				}
 
 				// do set comparison here
-				int differences = 0;
-				for(String s : sim2Set) {
-					if(!generatedSet.contains(s)) {
-						differences++;
+				int similarities = 0;
+				for(String s : generatedSet) {
+					if(sim2Set.contains(s)) {
+						similarities++;
 					}
 				}
 
-				return differences;
+				return similarities;
 			}
 
 			} catch (IOException e) {
@@ -138,25 +142,34 @@ public class PiQuerySender {
 	}
 
 	public static void generateProgressBar(int count, int maxCount) {
-		int numberOfBars = maxCount / 10;
-		int numberOfFilledBars = count / numberOfBars;
+		int numberOfBars = 30;
+		int numberOfFilledBars = (int)Math.floor((double)count / maxCount * numberOfBars);
 
 		StringBuilder sb = new StringBuilder();
 		sb.append("\rCompletion: [");
 		for(int i = 0; i < numberOfFilledBars; i++) {
 			sb.append("=");
 		}
-		sb.append("          ".substring(numberOfFilledBars));
+		sb.append("                              ".substring(numberOfFilledBars));
 		sb.append("] ");
 		sb.append(count);
-		sb.append("/");
+		sb.append(" / ");
 		sb.append(maxCount);
 
 		System.out.print(sb.toString());
 	}
 
-	public static void main(String[] args) {
+	public static int getNumberOfLinesInFile(File file) {
+		try {
+			return (int)Files.lines(Paths.get(file.getAbsolutePath())).count();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 
+		return -1;
+	}
+
+	public static void main(String[] args) {
 		System.out.print("Enter the pi # you are working on: ");
 		Scanner sc = new Scanner(System.in);
 		try {
@@ -200,19 +213,19 @@ public class PiQuerySender {
 
 			// test
 			int counter = 0;
+			int maxCounter = getNumberOfLinesInFile(bitVectorFile);
 
 			try {
 				BufferedReader br = new BufferedReader(new FileReader(bitVectorFile));
 
 				for(String line; (line = br.readLine()) != null; ) {
-					if(counter < 100) {
-						storeResults(line, keywordsArray[0], sendQuery(keywordsArray[0], line), piNumber);
-						generateProgressBar(counter, 100);
-						counter++;
-					}
-					// generate the max progress bar
-					generateProgressBar(counter, 100);
+					storeResults(line, keywordsArray[0], sendQuery(keywordsArray[0], line), piNumber);
+					generateProgressBar(counter, maxCounter);
+					counter++;
 				}
+
+				// generate the max progress bar
+				generateProgressBar(counter, maxCounter);
 
 			} catch (IOException e) {
 				e.printStackTrace();
