@@ -1,5 +1,7 @@
 package DataAnalysis;
 
+import RaspberryPi.PiQuerySender;
+
 import java.io.*;
 
 public class MultipleFileReader {
@@ -21,7 +23,6 @@ public class MultipleFileReader {
 	}
 
 	public static void searchFilesInDirectory(String directoryPath, String extension, String needle) {
-		System.out.println("* Searching for \"" + needle + "\"");
 		File dir = new File(directoryPath);
 
 		if(!dir.isDirectory()) {
@@ -35,7 +36,9 @@ public class MultipleFileReader {
 		int occurrences = 0;
 		if(directoryListing != null) {
 			for(File file : directoryListing) {
-				if(file.getName().endsWith(extension)) {
+				String fileName = file.getName();
+
+				if(fileName.endsWith(extension) && fileName.startsWith("pi")) {
 					int temp = findNeedleInFile(file, needle);
 
 					if(temp != -1) {
@@ -49,34 +52,57 @@ public class MultipleFileReader {
 		}
 
 		// write average to file if we find 21
-		if(occurrences == 21) {
+		// if(occurrences == 21) {
 			try (
-				FileWriter fw = new FileWriter("java_output/overlapScores.txt", true);
+				FileWriter fw = new FileWriter("saved/overlapScores.txt", true);
 				BufferedWriter bw = new BufferedWriter(fw);
 				PrintWriter pw = new PrintWriter(bw))
 			{
-				pw.println(needle + "_" + (double)overlapTotal / occurrences);
+				pw.println(needle + "_" + (double)overlapTotal / (occurrences * 10));
 				pw.close();
 				bw.close();
 				fw.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
+		// }
+	}
+
+	public static void checkNumberOfPerfectScores(File scoresFile) {
+		try {
+			BufferedReader br = new BufferedReader(new FileReader(scoresFile));
+
+			int perfectScoreCounter = 0;
+			for(String line; (line = br.readLine()) != null; ) {
+				String[] parts = line.split("_");
+
+				if(parts[1].equals("1.0")) {
+					perfectScoreCounter++;
+				}
+			}
+
+			System.out.println("Number of perfect scores: " + perfectScoreCounter);
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 
 	public static void main(String[] args) {
-		String binaryFilePath = "java_output/allBinaryNumbers.txt";
-		String directoryPath = "java_output";
+		String binaryFilePath = "saved/allBinaryNumbers.txt";
+		String directoryPath = "saved";
 		String extension = ".txt";
 
 		try {
-			// file = file with all binary numbers
 			BufferedReader br = new BufferedReader(new FileReader(new File(binaryFilePath)));
 
+			int counter = 0;
 			for(String line; (line = br.readLine()) != null; ) {
 				searchFilesInDirectory(directoryPath, extension, line);
+				counter++;
+				PiQuerySender.generateProgressBar(counter, 131072);
 			}
+
+			checkNumberOfPerfectScores(new File("saved/overlapScores.txt"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -46,7 +46,7 @@ public class FileValidator {
 	public static void main(String[] args) {
 		Map<String, Boolean> validationMap = new HashMap<>();
 
-		String directoryPath = "query_output";
+		String directoryPath = "saved";
 		String extension = ".txt";
 
 		File dir = new File(directoryPath);
@@ -60,7 +60,8 @@ public class FileValidator {
 
 		if(directoryListing != null) {
 			for(File file : directoryListing) {
-				if(file.getName().endsWith(extension)) {
+				String fileName = file.getName();
+				if(fileName.endsWith(extension) && fileName.startsWith("pi")) {
 					validationMap.put(file.getName(), validateFile(file));
 				}
 			}
@@ -68,8 +69,6 @@ public class FileValidator {
 			System.out.println(directoryPath + " is empty!");
 		}
 
-		validationMap.forEach((key, value) -> {
-			System.out.println(key + ": " + value);
-		});
+		validationMap.forEach((key, value) -> System.out.println(key + ": " + value));
 	}
 }

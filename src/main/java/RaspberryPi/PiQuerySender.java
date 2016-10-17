@@ -104,7 +104,8 @@ public class PiQuerySender {
 			}
 
 			} catch (IOException e) {
-				e.printStackTrace();
+				System.out.println(" Error on " + bitvector);
+				// e.printStackTrace();
 			}
 
 		return -1;
@@ -184,12 +185,19 @@ public class PiQuerySender {
 				throw new InputMismatchException("[ERROR]: You entered a number which has no matching file!");
 			}
 
+			System.out.print("Enter the keyword you want to use (0-20): ");
+			int keywordNumber = sc.nextInt();
+
+			if(keywordNumber < 0 || keywordNumber > 20) {
+				throw new InputMismatchException("[ERROR]: You entered a number outside of the bounds of 0 to 20");
+			}
+
 			File bitVectorFile = new File("java_output/pi" + piNumber + "_binaryNumbersList.txt");
 
 			long a = System.currentTimeMillis();
 
 			// generate sim2Set
-			sim2Set = generateSim2Set(keywordsArray[0]);
+			sim2Set = generateSim2Set(keywordsArray[keywordNumber]);
 
 			if(sim2Set == null) {
 				System.out.println("[ERROR]: sim2Set is empty");
@@ -203,7 +211,7 @@ public class PiQuerySender {
 				BufferedReader br = new BufferedReader(new FileReader(bitVectorFile));
 
 				for(String line; (line = br.readLine()) != null; ) {
-					storeResults(line, keywordsArray[0], sendQuery(keywordsArray[0], line), piNumber);
+					storeResults(line, keywordsArray[keywordNumber], sendQuery(keywordsArray[keywordNumber], line), piNumber);
 					generateProgressBar(counter, maxCounter);
 					counter++;
 				}

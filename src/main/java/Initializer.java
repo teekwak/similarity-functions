@@ -16,6 +16,7 @@ public class Initializer {
 		System.out.println("d) PiQuerySender");
 		System.out.println("e) GroundTruthGenerator");
 		System.out.println("f) CacheTest");
+		System.out.println("g) MultipleFileReader");
 		System.out.println("y) Clean Project");
 		System.out.println("z) Exit\n");
 		
@@ -40,6 +41,9 @@ public class Initializer {
 				break;
 			case "f":
 				CacheTest.main(null);
+				break;
+			case "g":
+				MultipleFileReader.main(null);
 				break;
 			case "y":
 				Cleaner.main(null);
