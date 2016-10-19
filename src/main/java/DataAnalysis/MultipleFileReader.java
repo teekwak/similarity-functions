@@ -6,12 +6,11 @@ import java.io.*;
 
 public class MultipleFileReader {
 	public static int findNeedleInFile(File file, String needle) {
-		try {
-			BufferedReader br = new BufferedReader(new FileReader(file));
-
+		try(BufferedReader br = new BufferedReader(new FileReader(file))) {
 			for(String line; (line = br.readLine()) != null; ) {
 				if(line.contains(needle)) {
 					String[] parts = line.split("_");
+					br.close();
 					return Integer.parseInt(parts[1]);
 				}
 			}	
@@ -32,13 +31,25 @@ public class MultipleFileReader {
 
 		File[] directoryListing = dir.listFiles();
 
+		String prefix;
+		int needleNumber = Integer.parseInt(needle, 2);
+		if(needleNumber < 43691) {
+			prefix = "pi1";
+		}
+		else if(needleNumber >= 43691 && needleNumber <= 87381) {
+			prefix = "pi2";
+		}
+		else {
+			prefix = "pi3";
+		}
+
 		int overlapTotal = 0;
 		int occurrences = 0;
 		if(directoryListing != null) {
 			for(File file : directoryListing) {
 				String fileName = file.getName();
 
-				if(fileName.endsWith(extension) && fileName.startsWith("pi")) {
+				if(fileName.endsWith(extension) && fileName.startsWith(prefix)) {
 					int temp = findNeedleInFile(file, needle);
 
 					if(temp != -1) {
@@ -56,23 +67,20 @@ public class MultipleFileReader {
 			try (
 				FileWriter fw = new FileWriter("saved/overlapScores.txt", true);
 				BufferedWriter bw = new BufferedWriter(fw);
-				PrintWriter pw = new PrintWriter(bw))
-			{
+				PrintWriter pw = new PrintWriter(bw)
+			) {
 				pw.println(needle + "_" + (double)overlapTotal / (occurrences * 10));
-				pw.close();
-				bw.close();
-				fw.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		// }
 	}
 
-	public static void checkNumberOfPerfectScores(File scoresFile) {
-		try {
-			BufferedReader br = new BufferedReader(new FileReader(scoresFile));
+	public static int checkNumberOfPerfectScores(File scoresFile) {
+		int perfectScoreCounter = 0;
 
-			int perfectScoreCounter = 0;
+		try(BufferedReader br = new BufferedReader(new FileReader(scoresFile));) {
+
 			for(String line; (line = br.readLine()) != null; ) {
 				String[] parts = line.split("_");
 
@@ -80,11 +88,11 @@ public class MultipleFileReader {
 					perfectScoreCounter++;
 				}
 			}
-
-			System.out.println("Number of perfect scores: " + perfectScoreCounter);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+
+		return perfectScoreCounter;
 	}
 
 	public static void main(String[] args) {
@@ -102,7 +110,9 @@ public class MultipleFileReader {
 				PiQuerySender.generateProgressBar(counter, 131072);
 			}
 
-			checkNumberOfPerfectScores(new File("saved/overlapScores.txt"));
+			System.out.println(" Number of perfect scores: " + checkNumberOfPerfectScores(new File("saved/overlapScores.txt")));
+
+			br.close();
 		} catch (IOException e) {
 			e.printStackTrace();
 		}

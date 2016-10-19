@@ -59,8 +59,8 @@ public class PiQuerySender {
 		try (
 			FileWriter fw = new FileWriter("query_output/pi" + piNumber + "_" + keyword + "_output.txt", true);
 			BufferedWriter bw = new BufferedWriter(fw);
-			PrintWriter pw = new PrintWriter(bw)) 
-		{
+			PrintWriter pw = new PrintWriter(bw)
+		) {
 			pw.println(sb.toString());
 			pw.close();
 			bw.close();
@@ -80,6 +80,7 @@ public class PiQuerySender {
 			for (String line; (line = br.readLine()) != null;) {
 				responseSb.append(line);
 			}
+			br.close();
 
 			JsonParser parser = new JsonParser();
 			JsonElement element = parser.parse(responseSb.toString());
@@ -120,6 +121,7 @@ public class PiQuerySender {
 			for (String line; (line = br.readLine()) != null;) {
 				responseSb.append(line);
 			}
+			br.close();
 
 			JsonParser parser = new JsonParser();
 			JsonElement element = parser.parse(responseSb.toString());
@@ -207,9 +209,7 @@ public class PiQuerySender {
 			int counter = 0;
 			int maxCounter = getNumberOfLinesInFile(bitVectorFile);
 
-			try {
-				BufferedReader br = new BufferedReader(new FileReader(bitVectorFile));
-
+			try(BufferedReader br = new BufferedReader(new FileReader(bitVectorFile))) {
 				for(String line; (line = br.readLine()) != null; ) {
 					storeResults(line, keywordsArray[keywordNumber], sendQuery(keywordsArray[keywordNumber], line), piNumber);
 					generateProgressBar(counter, maxCounter);
