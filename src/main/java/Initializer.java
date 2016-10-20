@@ -12,12 +12,11 @@ public class Initializer {
 
 		System.out.println("a) MultipleFileReader");
 		System.out.println("b) BinaryNumberGenerator");
-		System.out.println("c) ConfiguredMiner");
-		System.out.println("d) PiQuerySender");
-		System.out.println("e) GroundTruthGenerator");
-		System.out.println("f) CacheTest");
-		System.out.println("g) FileValidator");
-		System.out.println("h) MatchingSimFunctionAnalyzer");
+		System.out.println("c) PiQuerySender");
+		System.out.println("d) GroundTruthGenerator");
+		System.out.println("e) CacheTest");
+		System.out.println("f) FileValidator");
+		System.out.println("g) MatchingSimFunctionAnalyzer");
 		System.out.println("y) Clean Project");
 		System.out.println("z) Exit\n");
 		
@@ -31,22 +30,19 @@ public class Initializer {
 			case "b": 
 				BinaryNumberGenerator.main(null);
 				break;
-			case "c": 
-				ConfiguredMiner.main(null);
-				break;
-			case "d": 
+			case "c":
 				PiQuerySender.main(null);
 				break;
-			case "e":
+			case "d":
 				GroundTruthGenerator.main(null);
 				break;
-			case "f":
+			case "e":
 				CacheTest.main(null);
 				break;
-			case "g":
+			case "f":
 				FileValidator.main(null);
 				break;
-			case "h":
+			case "g":
 				MatchingSimFunctionAnalyzer.main(null);
 				break;
 			case "y":

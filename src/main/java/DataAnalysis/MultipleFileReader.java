@@ -5,7 +5,7 @@ import RaspberryPi.PiQuerySender;
 import java.io.*;
 
 public class MultipleFileReader {
-	public static int findNeedleInFile(File file, String needle) {
+	private static int findNeedleInFile(File file, String needle) {
 		try(BufferedReader br = new BufferedReader(new FileReader(file))) {
 			for(String line; (line = br.readLine()) != null; ) {
 				if(line.contains(needle)) {
@@ -21,7 +21,7 @@ public class MultipleFileReader {
 		return -1;
 	}
 
-	public static void searchFilesInDirectory(String directoryPath, String extension, String needle) {
+	private static void searchFilesInDirectory(String directoryPath, String extension, String needle) {
 		File dir = new File(directoryPath);
 
 		if(!dir.isDirectory()) {
@@ -79,7 +79,7 @@ public class MultipleFileReader {
 	public static int checkNumberOfPerfectScores(File scoresFile) {
 		int perfectScoreCounter = 0;
 
-		try(BufferedReader br = new BufferedReader(new FileReader(scoresFile));) {
+		try(BufferedReader br = new BufferedReader(new FileReader(scoresFile))) {
 
 			for(String line; (line = br.readLine()) != null; ) {
 				String[] parts = line.split("_");

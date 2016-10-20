@@ -12,10 +12,8 @@ import java.util.Set;
 // purpose of this class is to make sure each binary number only occurs once in a file
 // also makes sure the overlap total is not greater than 10 or less than 0
 public class FileValidator {
-	public static Set<String> binaryNumberSet;
-
-	public static boolean validateFile(File file) {
-		binaryNumberSet = new HashSet<>();
+	private static boolean validateFile(File file) {
+		Set<String> binaryNumberSet = new HashSet<>();
 		boolean valid = true;
 
 		try {

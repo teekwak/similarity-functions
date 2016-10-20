@@ -9,7 +9,7 @@ import java.text.DecimalFormat;
 
 class Counter {
 	private int totalCount;
-	private int[] propertyMatches;
+	private final int[] propertyMatches;
 
 	public Counter() {
 		this.propertyMatches = new int[17];

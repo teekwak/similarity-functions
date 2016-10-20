@@ -1,16 +1,12 @@
 package RaspberryPi;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.FileWriter;
-import java.io.BufferedWriter;
-import com.google.gson.*;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
-import java.net.*;
 import java.io.*;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashSet;
@@ -19,9 +15,9 @@ import java.util.Scanner;
 import java.util.Set;
 
 public class PiQuerySender {
-	public static Set<String> sim2Set;
+	private static Set<String> sim2Set;
 
-	public static String[] keywordsArray = new String[] {
+	private static final String[] keywordsArray = new String[] {
 		"database+OR+connection+OR+manager",
 		"ftp+OR+client",
 		"quick+OR+sort",
@@ -46,7 +42,7 @@ public class PiQuerySender {
 	};
 
 	// writes results to file in bitVector_overlapTotal format
-	public static void storeResults(String bitVector, String keyword, int overlapTotal, int piNumber) {
+	private static void storeResults(String bitVector, String keyword, int overlapTotal, int piNumber) {
 		while(overlapTotal == -1) {
 			overlapTotal = sendQuery(keyword, bitVector);
 		}
@@ -71,7 +67,7 @@ public class PiQuerySender {
 	}
 
 	// send query and calculate differences
-	public static int sendQuery(String keywords, String bitvector) {
+	private static int sendQuery(String keywords, String bitvector) {
 		try {
 			URL url = new URL("http://grok.ics.uci.edu:9551/solr/MoreLikeThisIndex/sim/?q=snippet_code:(" + keywords + ")+AND+snippet_number_of_functions:[1+TO+*]+AND+parent:true+AND+snippet_is_innerClass:false+AND+snippet_is_anonymous:false&start=0&fl=id&indent=on&wt=json&rows=1000&started=false&test=false&conciseCount=100&bitvector=" + bitvector);
 
@@ -112,7 +108,7 @@ public class PiQuerySender {
 		return -1;
 	}
 
-	public static Set<String> generateSim2Set(String keyword) {
+	private static Set<String> generateSim2Set(String keyword) {
 		try {
 			URL url = new URL("http://grok.ics.uci.edu:9551/solr/MoreLikeThisIndex/sim/?q=snippet_code:(" + keyword + ")+AND+snippet_number_of_functions:[1+TO+*]+AND+parent:true+AND+snippet_is_innerClass:false+AND+snippet_is_anonymous:false&start=0&fl=id&indent=on&wt=json&rows=1000&started=false&test=false&conciseCount=100&bitvector=11111111111111111");
 
@@ -162,7 +158,7 @@ public class PiQuerySender {
 		System.out.print(sb.toString());
 	}
 
-	public static int getNumberOfLinesInFile(File file) {
+	private static int getNumberOfLinesInFile(File file) {
 		try {
 			return (int)Files.lines(Paths.get(file.getAbsolutePath())).count();
 		} catch (IOException e) {
@@ -174,11 +170,16 @@ public class PiQuerySender {
 
 	public static void main(String[] args) {
 		if(!new File("query_output").exists()) {
-			new File("query_output").mkdir();
+			boolean createdDirectory = new File("query_output").mkdir();
+
+			if(!createdDirectory) {
+				System.out.println("[ERROR]: failed to create query_output directory");
+				return;
+			}
 		}
 
 		System.out.print("Enter the pi # you are working on: ");
-		Scanner sc = new Scanner(System.in);
+		Scanner sc = new Scanner(System.in, "UTF-8");
 		try {
 			int piNumber = sc.nextInt();
 
@@ -188,7 +189,8 @@ public class PiQuerySender {
 			}
 
 			System.out.print("Enter the keyword you want to use (0-20): ");
-			int keywordNumber = sc.nextInt();
+			int keywordNumber;
+			keywordNumber = sc.nextInt();
 
 			if(keywordNumber < 0 || keywordNumber > 20) {
 				throw new InputMismatchException("[ERROR]: You entered a number outside of the bounds of 0 to 20");

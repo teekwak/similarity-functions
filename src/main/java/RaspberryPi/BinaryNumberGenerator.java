@@ -12,7 +12,7 @@ import java.util.Scanner;
 
 public class BinaryNumberGenerator {
 	// print binary numbers from 0 to 131072 in a certain number of files as evenly distributed as possible
-	public static void printPaddedBinaryNumbers(int numberOfFilesToCreate) {
+	private static void printPaddedBinaryNumbers(int numberOfFilesToCreate) {
 		PrintWriter pw;
 
 		// calculate number of lines per file
@@ -49,13 +49,15 @@ public class BinaryNumberGenerator {
 	}
 
 	// checks the number of lines in every file for a certain directory
-	public static void checkNumberOfLinesInFile(String directory) {
+	private static void checkNumberOfLinesInFile(String directory) {
 		try {
 			File[] allFiles = new File(directory).listFiles();
 
-			for(File file : allFiles) {
-				long count = Files.lines(Paths.get(file.getAbsolutePath())).count();
-				System.out.println(file.getName() + " -> " + count + " lines");
+			if(allFiles != null) {
+				for(File file : allFiles) {
+					long count = Files.lines(Paths.get(file.getAbsolutePath())).count();
+					System.out.println(file.getName() + " -> " + count + " lines");
+				}
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -66,7 +68,12 @@ public class BinaryNumberGenerator {
 		String output_directory = "java_output";
 
 		if(!new File(output_directory).exists()) {
-			new File(output_directory).mkdir();
+			boolean createdDirectory = new File(output_directory).mkdir();
+
+			if(!createdDirectory) {
+				System.out.println("[ERROR]: failed to create java_output directory");
+				return;
+			}
 		}
 		Cleaner.deleteAllFilesInDirectory(output_directory);
 
