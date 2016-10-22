@@ -9,7 +9,7 @@ import java.util.Map;
 public class HashMapMultipleFileReader {
 	private static Map<String, Double> bitvectorMap;
 
-	public static void printPerfectScores() {
+	private static void printPerfectScores() {
 		int perfectCounter = 0;
 
 		for(Map.Entry<String, Double> entry : bitvectorMap.entrySet()) {
@@ -21,7 +21,7 @@ public class HashMapMultipleFileReader {
 		System.out.println("\nNumber of perfect scores: " + perfectCounter);
 	}
 
-	public static void printToFile() {
+	private static void printToFile() {
 		int count = 0;
 
 		for(Map.Entry<String, Double> entry : bitvectorMap.entrySet()) {
@@ -39,17 +39,15 @@ public class HashMapMultipleFileReader {
 		}
 	}
 
-	public static void normalizeScores(int fileCounter) {
+	private static void normalizeScores(int fileCounter) {
 		if(fileCounter == 0) {
 			throw new IllegalArgumentException("fileCounter cannot equal zero!");
 		}
 
-		bitvectorMap.forEach((key, value) -> {
-			bitvectorMap.put(key, value / (fileCounter * 10));
-		});
+		bitvectorMap.forEach((key, value) -> bitvectorMap.put(key, value / (fileCounter * 10)));
 	}
 
-	public static void readScoreFiles(String directoryPath) {
+	private static void readScoreFiles(String directoryPath) {
 		File dir = new File(directoryPath);
 
 		if(!dir.isDirectory()) {
@@ -60,19 +58,21 @@ public class HashMapMultipleFileReader {
 		File[] directoryListing = dir.listFiles();
 		int fileCounter = 0;
 
-		for(File file : directoryListing) {
-			if(file.getName().startsWith("pi")) {
-				try (BufferedReader br = new BufferedReader(new FileReader(file))) {
-					for(String line; (line = br.readLine()) != null; ) {
-						String[] parts = line.split("_");
-						Double mapValue = bitvectorMap.get(parts[0]);
+		if(directoryListing != null) {
+			for(File file : directoryListing) {
+				if(file.getName().startsWith("pi")) {
+					try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+						for(String line; (line = br.readLine()) != null; ) {
+							String[] parts = line.split("_");
+							Double mapValue = bitvectorMap.get(parts[0]);
 
-						bitvectorMap.put(parts[0], mapValue + Double.parseDouble(parts[1]));
+							bitvectorMap.put(parts[0], mapValue + Double.parseDouble(parts[1]));
+						}
+					} catch (IOException e) {
+						e.printStackTrace();
 					}
-				} catch (IOException e) {
-					e.printStackTrace();
+					fileCounter++;
 				}
-				fileCounter++;
 			}
 		}
 

@@ -1,6 +1,4 @@
-// import Server.*;
 import RaspberryPi.*;
-import Server.*;
 import DataAnalysis.*;
 import Extra.*;
 
@@ -10,14 +8,11 @@ public class Initializer {
 	public static void main(String[] args) {
 		System.out.println("Type in the letter of the class you want to run\nTyping in any other letter will exit the program\n");
 
-		System.out.println("a) MultipleFileReader");
-		System.out.println("b) BinaryNumberGenerator");
-		System.out.println("c) PiQuerySender");
-		System.out.println("d) GroundTruthGenerator");
-		System.out.println("e) CacheTest");
-		System.out.println("f) FileValidator");
-		System.out.println("g) MatchingSimFunctionAnalyzer");
-		System.out.println("h) HashMapMultipleFileReader");
+		System.out.println("a) BinaryNumberGenerator");
+		System.out.println("b) PiQuerySender");
+		System.out.println("c) FileValidator");
+		System.out.println("d) MatchingSimFunctionAnalyzer");
+		System.out.println("e) HashMapMultipleFileReader");
 		System.out.println("y) Clean Project");
 		System.out.println("z) Exit\n");
 		
@@ -25,28 +20,19 @@ public class Initializer {
 		Scanner sc = new Scanner(System.in);
 		String ans = sc.nextLine();
 		switch(ans) {
-			case "a": 
-				MultipleFileReader.main(null);
-				break;
-			case "b": 
+			case "a":
 				BinaryNumberGenerator.main(null);
 				break;
-			case "c":
+			case "b":
 				PiQuerySender.main(null);
 				break;
-			case "d":
-				GroundTruthGenerator.main(null);
-				break;
-			case "e":
-				CacheTest.main(null);
-				break;
-			case "f":
+			case "c":
 				FileValidator.main(null);
 				break;
-			case "g":
+			case "d":
 				MatchingSimFunctionAnalyzer.main(null);
 				break;
-			case "h":
+			case "e":
 				HashMapMultipleFileReader.main(null);
 				break;
 			case "y":
