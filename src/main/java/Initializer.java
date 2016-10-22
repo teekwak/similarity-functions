@@ -17,6 +17,7 @@ public class Initializer {
 		System.out.println("e) CacheTest");
 		System.out.println("f) FileValidator");
 		System.out.println("g) MatchingSimFunctionAnalyzer");
+		System.out.println("h) HashMapMultipleFileReader");
 		System.out.println("y) Clean Project");
 		System.out.println("z) Exit\n");
 		
@@ -44,6 +45,9 @@ public class Initializer {
 				break;
 			case "g":
 				MatchingSimFunctionAnalyzer.main(null);
+				break;
+			case "h":
+				HashMapMultipleFileReader.main(null);
 				break;
 			case "y":
 				Cleaner.main(null);

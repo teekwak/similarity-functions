@@ -62,18 +62,15 @@ public class MultipleFileReader {
 			System.out.println(directoryPath + " is empty!");
 		}
 
-		// write average to file if we find 21
-		// if(occurrences == 21) {
-			try (
-				FileWriter fw = new FileWriter("saved/overlapScores.txt", true);
-				BufferedWriter bw = new BufferedWriter(fw);
-				PrintWriter pw = new PrintWriter(bw)
-			) {
-				pw.println(needle + "_" + (double)overlapTotal / (occurrences * 10));
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		// }
+		try (
+			FileWriter fw = new FileWriter("saved/overlapScores.txt", true);
+			BufferedWriter bw = new BufferedWriter(fw);
+			PrintWriter pw = new PrintWriter(bw)
+		) {
+			pw.println(needle + "_" + (double)overlapTotal / (occurrences * 10));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	public static int checkNumberOfPerfectScores(File scoresFile) {
