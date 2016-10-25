@@ -6,9 +6,7 @@ echo
 echo "===== Running email.sh ====="
 echo
 
-keepTrying=true
-
-while [ keepTrying ];
+while [ 1 ];
 do
 	count=0
 
@@ -23,7 +21,7 @@ do
 	if [[ $count -lt 2 ]]; 
 		then
 			echo "Hello! We are confirming that the querying process is complete!" | mail -s "Querying is complete!" teekwak@gmail.com
-			keepTrying=false
+			break
 	fi
 
 	sleep 300s;
