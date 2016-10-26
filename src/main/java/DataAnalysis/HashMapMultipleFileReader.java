@@ -44,7 +44,9 @@ public class HashMapMultipleFileReader {
 			throw new IllegalArgumentException("fileCounter cannot equal zero!");
 		}
 
-		bitvectorMap.forEach((key, value) -> bitvectorMap.put(key, value / (fileCounter * 10)));
+		for(Map.Entry<String, Double> entry : bitvectorMap.entrySet()) {
+			bitvectorMap.put(entry.getKey(), entry.getValue() / (fileCounter * 10));
+		}
 	}
 
 	private static void readScoreFiles(String directoryPath) {

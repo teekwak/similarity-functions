@@ -13,6 +13,7 @@ public class Initializer {
 		System.out.println("c) FileValidator");
 		System.out.println("d) MatchingSimFunctionAnalyzer");
 		System.out.println("e) HashMapMultipleFileReader");
+		System.out.println("f) TableGenerator");
 		System.out.println("y) Clean Project");
 		System.out.println("z) Exit\n");
 		
@@ -34,6 +35,9 @@ public class Initializer {
 				break;
 			case "e":
 				HashMapMultipleFileReader.main(null);
+				break;
+			case "f":
+				TableGenerator.main(null);
 				break;
 			case "y":
 				Cleaner.main(null);
