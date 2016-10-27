@@ -186,8 +186,6 @@ public class PiQuerySender {
 				throw new InputMismatchException("[ERROR]: You entered a number outside of the bounds of 0 to 20");
 			}
 
-			File bitVectorFile = new File("java_output/pi" + piNumber + "_binaryNumbersList.txt");
-
 			long a = System.currentTimeMillis();
 
 			// generate sim2Set
@@ -199,6 +197,7 @@ public class PiQuerySender {
 			}
 
 			int counter = 0;
+			File bitVectorFile = new File("java_output/pi" + piNumber + "_binaryNumbersList.txt");
 			int maxCounter = UsefulThings.getNumberOfLinesInFile(bitVectorFile);
 
 			UsefulThings.generateProgressBar(counter, maxCounter);

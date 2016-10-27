@@ -14,6 +14,10 @@ public class ProjectAnalyzer {
 	public static List<String> schemaKeys;
 
 	public static void sendOutputToCSV(String schemaKey) {
+		if(schemaKey == null) {
+			throw new IllegalArgumentException("[ERROR]: schemaKey is null!");
+		}
+
 		try {
 			URL url = new URL("http://grok.ics.uci.edu:9551/solr/MoreLikeThisIndex/select?q=parent%3Atrue&rows=0&wt=json&indent=true&facet=true&facet.field=" + schemaKey + "&facet.limit=-1");
 
@@ -33,12 +37,15 @@ public class ProjectAnalyzer {
 				JsonArray schemaKeyResponseArray = facetFields.getAsJsonArray(schemaKey);
 
 				if(schemaKeyResponseArray == null) {
-					throw new IllegalArgumentException("You gave the server an incorrect schema key!");
+					throw new IllegalArgumentException("[ERROR]: You gave the server an incorrect schema key!");
 				}
 
 				File csvFile = new File("java_output/" + schemaKey + ".csv");
 				if(csvFile.exists()) {
-					csvFile.delete();
+					boolean deleted = csvFile.delete();
+					if(!deleted) {
+						throw new IllegalStateException("[ERROR]: " + csvFile.getName() + " was unable to be deleted");
+					}
 				}
 
 				try(PrintWriter pw = new PrintWriter(new FileOutputStream(csvFile, true))) {
