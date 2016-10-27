@@ -11,6 +11,7 @@ import java.util.Set;
 
 // purpose of this class is to make sure each binary number only occurs once in a file
 // also makes sure the overlap total is not greater than 10 or less than 0
+// also makes sure that the sim2 function gets exactly a score of 10
 public class FileValidator {
 	private static boolean validateFile(File file) {
 		Set<String> binaryNumberSet = new HashSet<>();
@@ -29,6 +30,12 @@ public class FileValidator {
 				else if(Integer.parseInt(parts[1]) > 10 || Integer.parseInt(parts[1]) < 0) {
 					System.out.println("[INVALID VALUE]: " + parts[0] + ": " + parts[1] + " --> " + file.getName());
 					valid = false;
+				}
+				else if(parts[0].equals("11111111111111111")) {
+					if(Integer.parseInt(parts[1]) != 10) {
+						System.out.println("[INVALID VALUE]: " + parts[0] + ": " + parts[1] + " --> " + file.getName());
+						valid = false;
+					}
 				}
 				else {
 					binaryNumberSet.add(parts[0]);
