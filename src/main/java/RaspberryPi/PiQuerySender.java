@@ -1,5 +1,6 @@
 package RaspberryPi;
 
+import Utilities.UsefulThings;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
@@ -16,6 +17,7 @@ import java.util.Set;
 
 public class PiQuerySender {
 	private static Set<String> sim2Set;
+	private static String port;
 
 	private static final String[] keywordsArray = new String[] {
 		"database+OR+connection+OR+manager",
@@ -67,9 +69,9 @@ public class PiQuerySender {
 	}
 
 	// send query and calculate differences
-	private static int sendQuery(String keywords, String bitvector) {
+	public static int sendQuery(String keywords, String bitvector) {
 		try {
-			URL url = new URL("http://grok.ics.uci.edu:9551/solr/MoreLikeThisIndex/sim/?q=snippet_code:(" + keywords + ")+AND+snippet_number_of_functions:[1+TO+*]+AND+parent:true+AND+snippet_is_innerClass:false+AND+snippet_is_anonymous:false&start=0&fl=id&indent=on&wt=json&rows=1000&started=false&test=false&conciseCount=100&bitvector=" + bitvector);
+			URL url = new URL(port + "/solr/MoreLikeThisIndex/sim/?q=snippet_code:(" + keywords + ")+AND+snippet_number_of_functions:[1+TO+*]+AND+parent:true+AND+snippet_is_innerClass:false+AND+snippet_is_anonymous:false&start=0&fl=id&indent=on&wt=json&rows=1000&started=false&test=false&conciseCount=100&bitvector=" + bitvector);
 
 			StringBuilder responseSb = new StringBuilder();
 			BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
@@ -101,16 +103,15 @@ public class PiQuerySender {
 			}
 
 			} catch (IOException e) {
-				System.out.println(" Error on " + bitvector);
 				// e.printStackTrace();
 			}
 
 		return -1;
 	}
 
-	private static Set<String> generateSim2Set(String keyword) {
+	public static Set<String> generateSim2Set(String keyword) {
 		try {
-			URL url = new URL("http://grok.ics.uci.edu:9551/solr/MoreLikeThisIndex/sim/?q=snippet_code:(" + keyword + ")+AND+snippet_number_of_functions:[1+TO+*]+AND+parent:true+AND+snippet_is_innerClass:false+AND+snippet_is_anonymous:false&start=0&fl=id&indent=on&wt=json&rows=1000&started=false&test=false&conciseCount=100&bitvector=11111111111111111");
+			URL url = new URL(port + "/solr/MoreLikeThisIndex/sim/?q=snippet_code:(" + keyword + ")+AND+snippet_number_of_functions:[1+TO+*]+AND+parent:true+AND+snippet_is_innerClass:false+AND+snippet_is_anonymous:false&start=0&fl=id&indent=on&wt=json&rows=1000&started=false&test=false&conciseCount=100&bitvector=11111111111111111");
 
 			StringBuilder responseSb = new StringBuilder();
 			BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
@@ -140,34 +141,6 @@ public class PiQuerySender {
 		return null;
 	}
 
-	public static void generateProgressBar(int count, int maxCount) {
-		int numberOfBars = 30;
-		int numberOfFilledBars = (int)Math.floor((double)count / maxCount * numberOfBars);
-
-		StringBuilder sb = new StringBuilder();
-		sb.append("\rCompletion: [");
-		for(int i = 0; i < numberOfFilledBars; i++) {
-			sb.append("=");
-		}
-		sb.append("                              ".substring(numberOfFilledBars));
-		sb.append("] ");
-		sb.append(count);
-		sb.append(" / ");
-		sb.append(maxCount);
-
-		System.out.print(sb.toString());
-	}
-
-	private static int getNumberOfLinesInFile(File file) {
-		try {
-			return (int)Files.lines(Paths.get(file.getAbsolutePath())).count();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-
-		return -1;
-	}
-
 	public static void main(String[] args) {
 		if(!new File("query_output").exists()) {
 			boolean createdDirectory = new File("query_output").mkdir();
@@ -176,6 +149,23 @@ public class PiQuerySender {
 				System.out.println("[ERROR]: failed to create query_output directory");
 				return;
 			}
+		}
+
+		// need to read config file here
+		File configFile = new File("config.txt");
+		try(BufferedReader br = new BufferedReader(new FileReader(configFile))) {
+			for(String line; (line = br.readLine()) != null; ) {
+				if(line.startsWith("port")) {
+					String[] parts = line.split("=");
+					port = parts[1];
+				}
+			}
+
+			if(port.length() == 0) {
+				throw new InputMismatchException("[ERROR]: port is not correct");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 
 		System.out.print("Enter the pi # you are working on: ");
@@ -203,24 +193,21 @@ public class PiQuerySender {
 			// generate sim2Set
 			sim2Set = generateSim2Set(keywordsArray[keywordNumber]);
 
-			if(sim2Set == null) {
+			if(sim2Set != null && sim2Set.size() == 0) {
 				System.out.println("[ERROR]: sim2Set is empty");
 				return;
 			}
 
 			int counter = 0;
-			int maxCounter = getNumberOfLinesInFile(bitVectorFile);
+			int maxCounter = UsefulThings.getNumberOfLinesInFile(bitVectorFile);
 
+			UsefulThings.generateProgressBar(counter, maxCounter);
 			try(BufferedReader br = new BufferedReader(new FileReader(bitVectorFile))) {
 				for(String line; (line = br.readLine()) != null; ) {
 					storeResults(line, keywordsArray[keywordNumber], sendQuery(keywordsArray[keywordNumber], line), piNumber);
-					generateProgressBar(counter, maxCounter);
 					counter++;
+					UsefulThings.generateProgressBar(counter, maxCounter);
 				}
-
-				// generate the max progress bar
-				generateProgressBar(counter, maxCounter);
-
 			} catch (IOException e) {
 				e.printStackTrace();
 			}

@@ -20,7 +20,7 @@ do
 	# if there is only one command (which would be the ps command) send me an email
 	if [[ $count -lt 2 ]]; 
 		then
-			echo "Hello! We are confirming that the querying process is complete!" | mail -s "Querying is complete!" teekwak@gmail.com
+			echo "Hello! We are confirming from $(hostname) that the querying process is complete!" | mail -s "Querying is complete!" teekwak@gmail.com
 			break
 	fi
 

@@ -1,7 +1,6 @@
 package DataAnalysis;
 
-import RaspberryPi.PiQuerySender;
-
+import Utilities.UsefulThings;
 import java.io.*;
 
 public class MultipleFileReader {
@@ -104,7 +103,7 @@ public class MultipleFileReader {
 			for(String line; (line = br.readLine()) != null; ) {
 				searchFilesInDirectory(directoryPath, extension, line);
 				counter++;
-				PiQuerySender.generateProgressBar(counter, 131072);
+				UsefulThings.generateProgressBar(counter, 131072);
 			}
 
 			System.out.println(" Number of perfect scores: " + checkNumberOfPerfectScores(new File("saved/overlapScores.txt")));

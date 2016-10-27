@@ -1,7 +1,6 @@
 package DataAnalysis;
 
-import RaspberryPi.PiQuerySender;
-
+import Utilities.UsefulThings;
 import java.io.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -35,7 +34,7 @@ public class HashMapMultipleFileReader {
 				e.printStackTrace();
 			}
 			count++;
-			PiQuerySender.generateProgressBar(count, 131072);
+			UsefulThings.generateProgressBar(count, 131072);
 		}
 	}
 

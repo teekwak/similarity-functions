@@ -1,7 +1,5 @@
 package RaspberryPi;
 
-import Extra.Cleaner;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -48,6 +46,14 @@ public class BinaryNumberGenerator {
 		}
 	}
 
+	public static void deleteAllFilesInDirectory(String directory) {
+		File[] allFiles = new File(directory).listFiles();
+
+		for(File file : allFiles) {
+			file.delete();
+		}
+	}
+
 	// checks the number of lines in every file for a certain directory
 	private static void checkNumberOfLinesInFile(String directory) {
 		try {
@@ -75,7 +81,7 @@ public class BinaryNumberGenerator {
 				return;
 			}
 		}
-		Cleaner.deleteAllFilesInDirectory(output_directory);
+		deleteAllFilesInDirectory(output_directory);
 
 		System.out.print("Enter the number of binary number files you want to create: ");
 		Scanner sc = new Scanner(System.in);

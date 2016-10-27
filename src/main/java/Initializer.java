@@ -1,6 +1,5 @@
 import RaspberryPi.*;
 import DataAnalysis.*;
-import Extra.*;
 
 import java.util.Scanner;
 
@@ -14,7 +13,6 @@ public class Initializer {
 		System.out.println("d) MatchingSimFunctionAnalyzer");
 		System.out.println("e) HashMapMultipleFileReader");
 		System.out.println("f) TableGenerator");
-		System.out.println("y) Clean Project");
 		System.out.println("z) Exit\n");
 		
 		System.out.print("Response: ");
@@ -38,9 +36,6 @@ public class Initializer {
 				break;
 			case "f":
 				TableGenerator.main(null);
-				break;
-			case "y":
-				Cleaner.main(null);
 				break;
 			default:
 				System.out.println("Exiting program...");
