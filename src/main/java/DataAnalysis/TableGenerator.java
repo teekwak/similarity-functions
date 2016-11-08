@@ -113,7 +113,6 @@ public class TableGenerator {
 	}
 
 	public static void createRows(File outputFile) {
-
 		try (BufferedReader br = new BufferedReader(new FileReader(outputFile))){
 			for(String line; (line = br.readLine()) != null; ) {
 				String[] parts = line.split("_");

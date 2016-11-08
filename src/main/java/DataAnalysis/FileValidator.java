@@ -1,5 +1,7 @@
 package DataAnalysis;
 
+import Utilities.UsefulThings;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -12,10 +14,15 @@ import java.util.Set;
 // purpose of this class is to make sure each binary number only occurs once in a file
 // also makes sure the overlap total is not greater than 10 or less than 0
 // also makes sure that the sim2 function gets exactly a score of 10
+// also make sure that there are exactly 131072 lines
 public class FileValidator {
 	private static boolean validateFile(File file) {
 		Set<String> binaryNumberSet = new HashSet<>();
 		boolean valid = true;
+
+		if(UsefulThings.getNumberOfLinesInFile(file) != 131072) {
+			valid = false;
+		}
 
 		try {
 			BufferedReader br = new BufferedReader(new FileReader(file));

@@ -43,8 +43,23 @@ class Counter {
 
 public class MatchingSimFunctionAnalyzer {
 	public static void main(String[] args) {
-		// take output file and generate another file with only perfect scores
-		File outputFile = new File("saved/overlapScores.txt");
+		// find the most recent file
+		long latestTime = -1;
+		File[] allFiles = new File("saved").listFiles();
+		if(allFiles != null) {
+			for(File f : allFiles) {
+				if(f.getName().startsWith("overlapScores")) {
+					String[] parts = f.getName().split("_|\\.");
+					long fileTime = Long.parseLong(parts[1]);
+					if(fileTime > latestTime) {
+						latestTime = fileTime;
+					}
+				}
+			}
+		}
+
+		File outputFile = new File("saved/overlapScores_" + latestTime + ".txt");
+		System.out.println("Most recent overlapScore file: " + outputFile.getName());
 
 		Counter counterObject = new Counter();
 

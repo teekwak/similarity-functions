@@ -2,6 +2,7 @@ package DataAnalysis;
 
 import Utilities.UsefulThings;
 import java.io.*;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -20,12 +21,12 @@ public class HashMapMultipleFileReader {
 		System.out.println("\nNumber of perfect scores: " + perfectCounter);
 	}
 
-	private static void printToFile() {
+	private static void printToFile(long timestamp) {
 		int count = 0;
 
 		for(Map.Entry<String, Double> entry : bitvectorMap.entrySet()) {
 			try (
-				FileWriter fw = new FileWriter("saved/overlapScores.txt", true);
+				FileWriter fw = new FileWriter("saved/overlapScores_" + timestamp + ".txt", true);
 				BufferedWriter bw = new BufferedWriter(fw);
 				PrintWriter pw = new PrintWriter(bw)
 			) {
@@ -40,7 +41,7 @@ public class HashMapMultipleFileReader {
 
 	private static void normalizeScores(int fileCounter) {
 		if(fileCounter == 0) {
-			throw new IllegalArgumentException("fileCounter cannot equal zero!");
+			throw new IllegalArgumentException("[ERROR]: fileCounter cannot equal zero!");
 		}
 
 		for(Map.Entry<String, Double> entry : bitvectorMap.entrySet()) {
@@ -77,7 +78,6 @@ public class HashMapMultipleFileReader {
 			}
 		}
 
-		fileCounter /= 3;
 		normalizeScores(fileCounter);
 	}
 
@@ -95,7 +95,7 @@ public class HashMapMultipleFileReader {
 		}
 
 		readScoreFiles(directoryPath);
-		printToFile();
+		printToFile(Instant.now().getEpochSecond() );
 		printPerfectScores();
 	}
 }

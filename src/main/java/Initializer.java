@@ -13,6 +13,7 @@ public class Initializer {
 		System.out.println("d) MatchingSimFunctionAnalyzer");
 		System.out.println("e) HashMapMultipleFileReader");
 		System.out.println("f) TableGenerator");
+		System.out.println("g) SingleBitVectorAnalyzer");
 		System.out.println("z) Exit\n");
 		
 		System.out.print("Response: ");
@@ -36,6 +37,9 @@ public class Initializer {
 				break;
 			case "f":
 				TableGenerator.main(null);
+				break;
+			case "g":
+				SingleBitVectorAnalyzer.main(null);
 				break;
 			default:
 				System.out.println("Exiting program...");
