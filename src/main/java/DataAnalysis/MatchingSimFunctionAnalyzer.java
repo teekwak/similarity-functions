@@ -42,6 +42,7 @@ class Counter {
 }
 
 public class MatchingSimFunctionAnalyzer {
+	@SuppressWarnings("Duplicates")
 	public static void main(String[] args) {
 		// find the most recent file
 		long latestTime = -1;
@@ -56,6 +57,10 @@ public class MatchingSimFunctionAnalyzer {
 					}
 				}
 			}
+		}
+
+		if(latestTime == -1) {
+			throw new IllegalArgumentException("[ERROR]: no overlap scores file exists!");
 		}
 
 		File outputFile = new File("saved/overlapScores_" + latestTime + ".txt");
