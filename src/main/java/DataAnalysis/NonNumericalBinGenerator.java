@@ -71,7 +71,7 @@ public class NonNumericalBinGenerator {
 	}
 
 	// create bins based on n and number of bins
-	public static List<Bin> generateBins(int n, int numberOfBins) {
+	private static List<Bin> generateBins(int n, int numberOfBins) {
 		List<Bin> listOfBins = new ArrayList<>();
 
 		int binWidth = (int)Math.ceil((double)n / numberOfBins);
@@ -83,24 +83,28 @@ public class NonNumericalBinGenerator {
 		return listOfBins;
 	}
 
+	private static String addPuncutationMarks(String input) {
+		return input.replace("_(comma)_", ",").replace("_(doublequote)_", "\"").replace("_(singlequote)_", "'").replace("_(tab)_", "\t");
+	}
+
 	// put data into bins
-	public static void populateBins(Map<String, Integer> data, List<Bin> bins) {
+	private static void populateBins(Map<String, Integer> data, List<Bin> bins) {
 		data.forEach((key, value) -> {
 			bins.forEach(bin -> {
 				if(value > bin.lowerBound && value <= bin.upperBound) {
-					bin.add(key, value);
+					bin.add(addPuncutationMarks(key), value);
 				}
 			});
 		});
 	}
 
 	// calculate number of bins based on Freedman-Diaconis choice
-	public static int freedmanDiaconisChoice(double iqr, int n) {
+	static int freedmanDiaconisChoice(double iqr, int n) {
 		return (int)Math.ceil(2 * iqr / Math.pow(n, 1/3));
 	}
 
 	// find the median of a list of integers
-	public static double findMedian(List<Integer> list) {
+	static double findMedian(List<Integer> list) {
 		int middle = list.size() / 2;
 
 		if(list.size() % 2 == 0) {
@@ -166,7 +170,7 @@ public class NonNumericalBinGenerator {
 
 	private static String queryForURL(String server, String key, String value, int rowNumber) {
 		try {
-			URL url = new URL("http://" + server + ":9551/solr/MoreLikeThisIndex/select?q=parent%3Atrue+AND+" + key + ":" + value + "&start=" + rowNumber + "&rows=1&fl=id&wt=json&indent=true&");
+			URL url = new URL("http://" + server + ":9551/solr/MoreLikeThisIndex/select?q=parent%3Atrue+AND+" + key + ":" + value + "&start=" + rowNumber + "&rows=1&fl=id&wt=json&indent=true");
 			StringBuilder responseSb = new StringBuilder();
 			BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
 			for (String line; (line = br.readLine()) != null; ) {
@@ -186,58 +190,55 @@ public class NonNumericalBinGenerator {
 		throw new IllegalArgumentException("You should not be here!");
 	}
 
+	private static int getNumFound(String server, String key, String value) {
+		// query the server once to get the total number
+		int numFound = 0;
+		try {
+			URL url = new URL("http://" + server + ":9551/solr/MoreLikeThisIndex/select?q=parent%3Atrue+AND+" + key + ":" + value + "&rows=0&wt=json&indent=true");
+			StringBuilder responseSb = new StringBuilder();
+			BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
+			for (String line; (line = br.readLine()) != null;) {
+				responseSb.append(line);
+			}
+			br.close();
+
+			JsonParser parser = new JsonParser();
+			JsonElement element = parser.parse(responseSb.toString());
+			if(element.isJsonObject()) {
+				JsonObject totalResponse = element.getAsJsonObject();
+				JsonObject response = totalResponse.getAsJsonObject("response");
+				numFound = response.get("numFound").getAsInt();
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		if(numFound == 0) {
+			System.out.println("http://" + server + ":9551/solr/MoreLikeThisIndex/select?q=parent%3Atrue+AND+" + key + ":" + value + "&rows=0&wt=json&indent=true");
+			throw new IllegalArgumentException("[ERROR]: the number found cannot be zero!");
+		}
+
+		return numFound;
+	}
+
 	public static void main(String[] args) {
-//		Map<String, Integer> fieldToOccurrenceMap = sortMapByValue(populateWithCSVFile("snippet_author_name.csv"));
-//		List<Integer> valuesList = new ArrayList<>(fieldToOccurrenceMap.values());
-//		// System.out.println(calculateIQR(valuesList));
-//		// System.out.println(freedmanDiaconisChoice(calculateIQR(valuesList), valuesList.size()));
-//
-//		bins = generateBins(valuesList.size(), freedmanDiaconisChoice(calculateIQR(valuesList), valuesList.size()));
-//		populateBins(fieldToOccurrenceMap, bins);
-//
-//		// bins.forEach(bin -> System.out.println(bin.size()));
-//
-//		simpleRandomSample(10, fieldToOccurrenceMap.size()).forEach(System.out::println);
-
-		// what happens after this?
-		// we remove the sample from the population
-		// we then do SRS again on the new bucket based on a new "populateWithCSVFile"
-		// shit, so this needs to be super extra modular
-		// or we need to keep track of the ones we already picked
-		// how do we get project names just from the author name and count?
-
-
-
-
-
-		// outline the entire program
-		//
-		// for each file in set
-		// take in a file name
-		// stores all values of the file into a map
-		// remove all values that are in the save data structure
-		// generate bins from that map
-		// put the values into the bins
-		// do SRS on the bins
-		// put those values into a save data structure
-
 		schemaKeys = new ArrayList<>(asList(
-//						"snippet_imports",
-//						"snippet_variable_names",
-//						"snippet_class_name",
-//						"snippet_author_name",
-//						"snippet_project_name",
-//						"snippet_method_invocation_names",
-//						"snippet_method_dec_names",
-//						// "snippet_size",
-//						// "snippet_imports_count",
-//						// "snippet_complexity_density",
-//						"snippet_extends",
-//						"snippet_package",
-//						// "snippet_number_of_fields",
-//						// "snippet_is_generic", // fails because of median?
-//						// "snippet_is_abstract", // fails because of median?
-//						// "snippet_is_wildcard", // fails because of median?
+						"snippet_imports",
+						"snippet_variable_names",
+						"snippet_class_name",
+						"snippet_author_name",
+						"snippet_project_name",
+						"snippet_method_invocation_names",
+						"snippet_method_dec_names",
+						// "snippet_size",
+						// "snippet_imports_count",
+						// "snippet_complexity_density",
+						"snippet_extends",
+						"snippet_package",
+						// "snippet_number_of_fields",
+						// "snippet_is_generic", // fails because of median?
+						// "snippet_is_abstract", // fails because of median?
+						// "snippet_is_wildcard", // fails because of median?
 						"snippet_project_owner"
 		));
 
@@ -260,42 +261,13 @@ public class NonNumericalBinGenerator {
 
 		System.out.println(saved.size());
 
-		// port=http://grok.ics.uci.edu:9551 // just make sure to run MoreLikeThisSearchEngineFull and not MoreLikeThisSearchEngine2. check the screens!
-
+		// just make sure to run MoreLikeThisSearchEngineFull and not MoreLikeThisSearchEngine2. check the screens!
 		String server = "grok.ics.uci.edu";
 
 		Set<String> savedURLs = new HashSet<>(); // this will be used to get values using SRS
 		saved.forEach((key, valueSet) -> {
 			valueSet.forEach(value -> {
-
-				// query the server once to get the total number
-				int numFound = 0;
-				try {
-					URL url = new URL("http://" + server + ":9551/solr/MoreLikeThisIndex/select?q=parent%3Atrue+AND+" + key + ":" + value + "&rows=0&wt=json&indent=true&");
-					StringBuilder responseSb = new StringBuilder();
-					BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
-					for (String line; (line = br.readLine()) != null;) {
-						responseSb.append(line);
-					}
-					br.close();
-
-					JsonParser parser = new JsonParser();
-					JsonElement element = parser.parse(responseSb.toString());
-					if(element.isJsonObject()) {
-						JsonObject totalResponse = element.getAsJsonObject();
-						JsonObject response = totalResponse.getAsJsonObject("response");
-						numFound = response.get("numFound").getAsInt();
-
-						System.out.println(numFound);
-					}
-
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-
-				if(numFound == 0) {
-					throw new IllegalArgumentException("[ERROR]: the number found cannot be zero!");
-				}
+				int numFound = getNumFound(server, key, value);
 
 				// query until you can add something to the set
 				while(true) {
