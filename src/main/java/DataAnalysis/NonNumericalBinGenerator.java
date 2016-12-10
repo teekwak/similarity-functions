@@ -1,6 +1,6 @@
 package DataAnalysis;
 
-import com.google.gson.JsonArray;
+import Utilities.UsefulThings;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -281,5 +281,7 @@ public class NonNumericalBinGenerator {
 		});
 
 		savedURLs.forEach(System.out::println);
+
+		UsefulThings.printSetToFile(savedURLs, "java_output/printStuff.txt");
 	}
 }
