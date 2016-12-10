@@ -52,7 +52,7 @@ public class ProjectAnalyzer {
 					pw.write("Field,Count,\n");
 
 					for(int i = 0; i < schemaKeyResponseArray.size(); i += 2) {
-						String key = schemaKeyResponseArray.get(i).getAsString().replaceAll(",", "_(comma)_").replaceAll("\"", "_(doublequote)_").replaceAll("'", "_(singlequote)_");
+						String key = schemaKeyResponseArray.get(i).getAsString().replaceAll(",", "_(comma)_").replaceAll("\"", "_(doublequote)_").replaceAll("'", "_(singlequote)_").replaceAll("\t", "_(tab)_");
 						if(key.length() == 0) {
 							key = "_(empty)_";
 						}
