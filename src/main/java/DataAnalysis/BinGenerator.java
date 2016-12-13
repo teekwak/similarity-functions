@@ -20,7 +20,6 @@ public class BinGenerator {
 		bins[NUMBER_OF_BINS - 1] += 1;
 	}
 
-
 	public static void main(String[] args) {
 		File inputFile = new File("MLT_CSV/snippet_imports_count_one_column.csv");
 		bins = new int[NUMBER_OF_BINS];

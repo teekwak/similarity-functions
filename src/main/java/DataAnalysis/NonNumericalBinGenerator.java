@@ -1,6 +1,6 @@
 package DataAnalysis;
 
-import Utilities.UsefulThings;
+import Utilities.Statistics;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -34,6 +34,9 @@ class Bin {
 	}
 }
 
+/**
+ * Created by Kwak
+ */
 public class NonNumericalBinGenerator {
 	private static List<String> schemaKeys;
 	private static List<Bin> bins;
@@ -71,6 +74,8 @@ public class NonNumericalBinGenerator {
 	}
 
 	// create bins based on n and number of bins
+	// TODO
+	// this will break for doubles
 	private static List<Bin> generateBins(int n, int numberOfBins) {
 		List<Bin> listOfBins = new ArrayList<>();
 
@@ -88,61 +93,15 @@ public class NonNumericalBinGenerator {
 	}
 
 	// put data into bins
+	// this fails for true/false
 	private static void populateBins(Map<String, Integer> data, List<Bin> bins) {
-		data.forEach((key, value) -> {
+		data.forEach((key, value) ->
 			bins.forEach(bin -> {
 				if(value > bin.lowerBound && value <= bin.upperBound) {
 					bin.add(addPuncutationMarks(key), value);
 				}
-			});
-		});
-	}
-
-	// calculate number of bins based on Freedman-Diaconis choice
-	static int freedmanDiaconisChoice(double iqr, int n) {
-		return (int)Math.ceil(2 * iqr / Math.pow(n, 1/3));
-	}
-
-	// find the median of a list of integers
-	static double findMedian(List<Integer> list) {
-		int middle = list.size() / 2;
-
-		if(list.size() % 2 == 0) {
-			int left = middle - 1;
-			return (double)(list.get(left) + list.get(middle)) / 2;
-		}
-		else {
-			return list.get(middle);
-		}
-	}
-
-	// find the IQR of an entire list
-	private static double calculateIQR(List<Integer> list) {
-		int middle = list.size() / 2;
-		double firstQuartile, thirdQuartile;
-		if(list.size() % 2 == 0) {
-			firstQuartile = findMedian(list.subList(0, middle));
-			thirdQuartile = findMedian(list.subList(middle, list.size()));
-		}
-		else {
-			firstQuartile = findMedian(list.subList(0, middle));
-			thirdQuartile = findMedian(list.subList(middle + 1, list.size()));
-		}
-
-		return thirdQuartile - firstQuartile;
-	}
-
-	// fancy comparator notation to sort the map by value (lowest to highest)
-	private static Map<String, Integer> sortMapByValue(Map<String, Integer> map) {
-		List<Map.Entry<String, Integer>> entryList = new ArrayList<>(map.entrySet());
-		entryList.sort(Comparator.comparing(Map.Entry::getValue));
-
-		map = new LinkedHashMap<>();
-		for(Map.Entry<String, Integer> e : entryList) {
-			map.put(e.getKey(), e.getValue());
-		}
-
-		return map;
+			})
+		);
 	}
 
 	private static Map<String, Integer> populateWithCSVFile(String fileName) {
@@ -223,33 +182,33 @@ public class NonNumericalBinGenerator {
 
 	public static void main(String[] args) {
 		schemaKeys = new ArrayList<>(asList(
-						"snippet_imports",
-						"snippet_variable_names",
-						"snippet_class_name",
-						"snippet_author_name",
-						"snippet_project_name",
-						"snippet_method_invocation_names",
-						"snippet_method_dec_names",
-						// "snippet_size",
-						// "snippet_imports_count",
-						// "snippet_complexity_density",
-						"snippet_extends",
-						"snippet_package",
-						// "snippet_number_of_fields",
-						// "snippet_is_generic", // fails because of median?
-						// "snippet_is_abstract", // fails because of median?
-						// "snippet_is_wildcard", // fails because of median?
-						"snippet_project_owner"
+//						"snippet_imports",
+//						"snippet_variable_names",
+//						"snippet_class_name",
+//						"snippet_author_name",
+//						"snippet_project_name",
+//						"snippet_method_invocation_names",
+//						"snippet_method_dec_names",
+//						"snippet_size",
+//						"snippet_imports_count",
+//						"snippet_complexity_density",
+//						"snippet_extends",
+//						"snippet_package",
+//						 "snippet_number_of_fields",
+//						 "snippet_is_generic", // fails because of FD calculation and binning
+//						 "snippet_is_abstract", // fails because of FD calculation and binning
+//						 "snippet_is_wildcard"// , // fails because of FD calculation and binning
+//						"snippet_project_owner"
 		));
 
 		Map<String, Set<String>> saved = new HashMap<>(); // this will be used to save the values from the stratified sampling + SRS
 		for(String fileName : schemaKeys) {
 			System.out.println("Running " + fileName);
 
-			Map<String, Integer> fieldToOccurrenceMap = sortMapByValue(populateWithCSVFile(fileName));
+			Map<String, Integer> fieldToOccurrenceMap = Statistics.sortByValue(populateWithCSVFile(fileName));
 
 			List<Integer> valuesList = new ArrayList<>(fieldToOccurrenceMap.values());
-			bins = generateBins(valuesList.size(), freedmanDiaconisChoice(calculateIQR(valuesList), valuesList.size()));
+			bins = generateBins(valuesList.size(), Statistics.calculateFreedmanDiaconisChoice(Statistics.calculateIQR(valuesList), valuesList.size()));
 			populateBins(fieldToOccurrenceMap, bins);
 
 			// i should have an add to saved function?
@@ -265,7 +224,7 @@ public class NonNumericalBinGenerator {
 		String server = "grok.ics.uci.edu";
 
 		Set<String> savedURLs = new HashSet<>(); // this will be used to get values using SRS
-		saved.forEach((key, valueSet) -> {
+		saved.forEach((key, valueSet) ->
 			valueSet.forEach(value -> {
 				int numFound = getNumFound(server, key, value);
 
@@ -277,11 +236,11 @@ public class NonNumericalBinGenerator {
 						break;
 					}
 				}
-			});
-		});
+			})
+		);
 
 		savedURLs.forEach(System.out::println);
 
-		UsefulThings.printSetToFile(savedURLs, "java_output/printStuff.txt");
+		// UsefulThings.printSetToFile(savedURLs, "java_output/printStuff.txt");
 	}
 }
