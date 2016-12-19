@@ -7,6 +7,10 @@ import java.util.*;
  */
 public class Statistics {
 
+	public static double calculateMarginOfError(double zscore, double standardDeviation, int n) {
+		return zscore * standardDeviation / Math.sqrt(n);
+	}
+
 	/**
 	 * Calculates the number of bins using the Freedman Diaconis Choice formula
 	 *
@@ -155,9 +159,5 @@ public class Statistics {
 		}
 
 		return map;
-	}
-
-	public static void main(String[] args) {
-		System.out.println(calculateMedian(new ArrayList<Integer>()));
 	}
 }
