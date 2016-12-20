@@ -8,6 +8,7 @@ import com.google.gson.JsonParser;
 
 import java.io.*;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.util.*;
 
 /**
@@ -65,12 +66,13 @@ class TrueFalseBin {
 public class SampleURLGenerator {
 	private static final int SAMPLE_SIZE = 8600;
 	private static final int POPULATION_SIZE = 10829321;
+	private static Random randomObject;
 
 	private static int getNumFound(String server, String key, String value) {
 		// query the server once to get the total number
 		int numFound = 0;
 		try {
-			URL url = new URL("http://" + server + ":9551/solr/MoreLikeThisIndex/select?q=parent%3Atrue+AND+" + key + ":" + value + "&rows=0&wt=json&indent=true");
+			URL url = new URL("http://" + server + ":9551/solr/MoreLikeThisIndex/select?q=parent%3Atrue+AND+" + key + "%3A\"" + URLEncoder.encode(value, "UTF-8") + "\"&rows=0&wt=json&indent=true");
 			StringBuilder responseSb = new StringBuilder();
 			BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
 			for (String line; (line = br.readLine()) != null;) {
@@ -80,6 +82,7 @@ public class SampleURLGenerator {
 
 			JsonParser parser = new JsonParser();
 			JsonElement element = parser.parse(responseSb.toString());
+
 			if(element.isJsonObject()) {
 				JsonObject totalResponse = element.getAsJsonObject();
 				JsonObject response = totalResponse.getAsJsonObject("response");
@@ -90,8 +93,12 @@ public class SampleURLGenerator {
 		}
 
 		if(numFound == 0) {
-			System.out.println("http://" + server + ":9551/solr/MoreLikeThisIndex/select?q=parent%3Atrue+AND+" + key + ":" + value + "&rows=0&wt=json&indent=true");
-			throw new IllegalArgumentException("[ERROR]: the number found cannot be zero!");
+			try {
+				System.out.println("http://" + server + ":9551/solr/MoreLikeThisIndex/select?q=parent%3Atrue+AND+" + key + "%3A\"" + URLEncoder.encode(value, "UTF-8") + "\"&rows=0&wt=json&indent=true");
+				throw new IllegalArgumentException("[ERROR]: the number found cannot be zero!");
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
 		}
 
 		return numFound;
@@ -99,7 +106,7 @@ public class SampleURLGenerator {
 
 	private static String queryForURL(String server, String key, String value, int rowNumber) {
 		try {
-			URL url = new URL("http://" + server + ":9551/solr/MoreLikeThisIndex/select?q=parent%3Atrue+AND+" + key + ":" + value + "&start=" + rowNumber + "&rows=1&fl=id&wt=json&indent=true");
+			URL url = new URL("http://" + server + ":9551/solr/MoreLikeThisIndex/select?q=parent%3Atrue+AND+" + key + "%3A\"" + URLEncoder.encode(value, "UTF-8") + "\"&start=" + rowNumber + "&rows=1&fl=id&wt=json&indent=true");
 			StringBuilder responseSb = new StringBuilder();
 			BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
 			for (String line; (line = br.readLine()) != null; ) {
@@ -123,48 +130,63 @@ public class SampleURLGenerator {
 		Set<Integer> randomNumbers = new TreeSet<>();
 
 		while(randomNumbers.size() != size) {
-			randomNumbers.add((int)(Math.random() * upperBound));
+			randomNumbers.add(randomObject.nextInt(upperBound));
 		}
 
 		return randomNumbers;
 	}
 
-	// sort bins by fractional part
+	// sort bins by fractional part, which is calculated as bin size / total size
 	// round up those closest to 1 until targetValue is met
 	// randomly select X elements from each bin
 	// return that list and merge with the master list
-	private static List<String> stratifiedSample(List<BoundedBin> bins, int targetValue) {
+	// VERY IMPORTANT THAT SAMPLE SIZE IS DIVISIBLE BY 100 (makes things nice at the end)
+	private static List<String> stratifiedSample(List<BoundedBin> bins) {
 		List<String> sampleValues = new ArrayList<>();
 
+		int populationSize = 0;
+		for(BoundedBin b : bins) {
+			for(int value : b.getMapping().values()) {
+				populationSize += value;
+			}
+		}
+
+		final int finalPopulationSize = populationSize; // damn you lambda expressions
+
 		// sort by highest decimal to lowest decimal
-		PriorityQueue<Integer> binProportions = new PriorityQueue<>(
+		PriorityQueue<Integer> binPercentagesByDecimal = new PriorityQueue<>(
 			(a, b) -> {
-				double firstDecimal = (double)targetValue * bins.get(a).size() / POPULATION_SIZE;
-				double secondDecimal = (double)targetValue * bins.get(b).size() / POPULATION_SIZE;
-				return Double.compare((secondDecimal * 1000) % 1000, (firstDecimal * 1000) % 1000);
+				double firstDecimal = (double)bins.get(a).size() / finalPopulationSize;
+				double secondDecimal = (double)bins.get(b).size() / finalPopulationSize;
+				return Double.compare((secondDecimal * 100) % 100, (firstDecimal * 100) % 100);
 			}
 		);
 
-		int difference = targetValue;
-		List<Integer> numberFromEachBin = new ArrayList<>();
+		int difference = 100;
+		List<Integer> percentageFromEachBin = new ArrayList<>();
 
 		for(int i = 0; i < bins.size(); i++) {
-			difference -= (int)Math.floor((double)targetValue * bins.get(i).size() / POPULATION_SIZE);
-			binProportions.add(i);
-			numberFromEachBin.add((int)Math.floor((double)targetValue * bins.get(i).size() / POPULATION_SIZE));
+			int flooredPercentage = (int)Math.floor((double)bins.get(i).size() / finalPopulationSize * 100);
+			percentageFromEachBin.add(flooredPercentage);
+
+			if(bins.get(i).size() != 0) {
+				binPercentagesByDecimal.add(i);
+			}
+
+			difference -= flooredPercentage;
 		}
 
-		// round up the buckets closest to 1
-		while(difference > 0) {
-			int index = binProportions.poll();
-			numberFromEachBin.set(index, numberFromEachBin.get(index) + 1);
-			difference--;
+		while(difference > 0 && !binPercentagesByDecimal.isEmpty()) {
+			int index = binPercentagesByDecimal.poll();
+			int newValue = percentageFromEachBin.get(index) + 1;
+			percentageFromEachBin.set(index, newValue);
+			difference -= 1;
 		}
 
 		// simple random sample from each bin
 		for(int i = 0; i < bins.size(); i++) {
-			if(numberFromEachBin.get(i) != 0) {
-				sampleValues.addAll(simpleRandomSampleFromBin(bins.get(i), numberFromEachBin.get(i)));
+			if(percentageFromEachBin.get(i) != 0) {
+				sampleValues.addAll(simpleRandomSampleFromBin(bins.get(i), percentageFromEachBin.get(i) * SAMPLE_SIZE / 100));
 			}
 		}
 
@@ -243,41 +265,48 @@ public class SampleURLGenerator {
 		return listOfBins;
 	}
 
-	private static String addPuncutationMarks(String input) {
-		return input.replace("_(comma)_", ",").replace("_(doublequote)_", "\"").replace("_(singlequote)_", "'").replace("_(tab)_", "\t");
+	private static String addPunctuationMarks(String input) {
+		return input.replace("_(comma)_", ",").replace("_(doublequote)_", "\"").replace("_(singlequote)_", "'").replace("_(tab)_", "\t").replace("_(empty)_", "");
+	}
+
+	private static String escapeCharactersForSolr(String input) {
+		return input.replace("\\", "\\\\");
 	}
 
 	// put data into bins
 	// this fails for true/false
 	private static void populateBins(Map<String, Integer> data, List<BoundedBin> bins) {
-		data.forEach((key, value) ->
-			bins.forEach(bin -> {
-				if(value >= bin.lowerBound && value < bin.upperBound) {
-					bin.add(addPuncutationMarks(key), value);
+		for(Map.Entry<String, Integer> entry : data.entrySet()) {
+			for(BoundedBin bin : bins) {
+				if(entry.getValue() >= bin.lowerBound && entry.getValue() < bin.upperBound) {
+					bin.add(escapeCharactersForSolr(addPunctuationMarks(entry.getKey())), entry.getValue());
+					break;
 				}
-			})
-		);
+			}
+		}
 	}
 
 	public static void main(String[] args) {
+		randomObject = new Random();
+
 		Map<String, Boolean> schemaKeys = new HashMap<>();
 		{
-//			schemaKeys.put("snippet_imports", true);
-//			schemaKeys.put("snippet_variable_names", true);
-//			schemaKeys.put("snippet_class_name", true);
-//			schemaKeys.put("snippet_author_name", true);
-//			schemaKeys.put("snippet_project_name", true);
-//			schemaKeys.put("snippet_method_invocation_names", true);
-//			schemaKeys.put("snippet_method_dec_names", true);
-//			schemaKeys.put("snippet_size", true);
-//			schemaKeys.put("snippet_imports_count", true);
-//			schemaKeys.put("snippet_complexity_density", true);
-//			schemaKeys.put("snippet_extends", true);
-//			schemaKeys.put("snippet_package", true);
-//			schemaKeys.put("snippet_number_of_fields", true);
+			schemaKeys.put("snippet_imports", true);
+			schemaKeys.put("snippet_variable_names", true);
+			schemaKeys.put("snippet_class_name", true);
+			schemaKeys.put("snippet_author_name", true);
+			schemaKeys.put("snippet_project_name", true);
+			schemaKeys.put("snippet_method_invocation_names", true);
+			schemaKeys.put("snippet_method_dec_names", true);
+			schemaKeys.put("snippet_size", true);
+			schemaKeys.put("snippet_imports_count", true);
+			schemaKeys.put("snippet_complexity_density", true);
+			schemaKeys.put("snippet_extends", true);
+			schemaKeys.put("snippet_package", true);
+			schemaKeys.put("snippet_number_of_fields", true);
 			schemaKeys.put("snippet_is_generic", false); // fails because of FD calculation
-//			schemaKeys.put("snippet_is_abstract", false); // fails because of FD calculation
-//			schemaKeys.put("snippet_is_wildcard", false); // fails because of FD calculation
+			schemaKeys.put("snippet_is_abstract", false); // fails because of FD calculation
+			schemaKeys.put("snippet_is_wildcard", false); // fails because of FD calculation
 			schemaKeys.put("snippet_project_owner", true);
 		}
 
@@ -294,7 +323,7 @@ public class SampleURLGenerator {
 				List<BoundedBin> bins = createEmptyBins(valuesList.size(), Statistics.calculateFreedmanDiaconisChoice(Statistics.calculateIQR(valuesList), valuesList.size()));
 				populateBins(fieldToOccurrenceMap, bins);
 
-				stratifiedSample(bins, 8600).forEach(value -> {
+				stratifiedSample(bins).forEach(value -> {
 					saved.putIfAbsent(schemaKey, new ArrayList<>());
 					saved.get(schemaKey).add(value);
 				});
@@ -306,30 +335,32 @@ public class SampleURLGenerator {
 			}
 		}
 
-		// v.size() should be 8600
-		// saved.forEach((k, v) -> System.out.println(k + " " + v.size()));
-		// saved.forEach((k, v) -> v.forEach(System.out::println));
-
 		String server = "grok.ics.uci.edu";
 
-		Set<String> savedURLs = new HashSet<>(); // this will be used to get values using SRS
-		saved.forEach((key, valueSet) ->
-			valueSet.forEach(value -> {
-				int numFound = getNumFound(server, key, value);
+		for(Map.Entry<String, List<String>> entry : saved.entrySet()) {
+			Set<String> savedURLs = new HashSet<>(); // this will be used to get values using SRS
+
+			int counter = 0;
+
+			for(String value : entry.getValue()) {
+				int numFound = getNumFound(server, entry.getKey(), value);
+
+				UsefulThings.generateProgressBar(counter, SAMPLE_SIZE);
 
 				// query until you can add something to the set
 				while(true) {
-					String classURL = queryForURL(server, key, value, (int)(Math.random() * numFound));
+					String classURL = queryForURL(server, entry.getKey(), value, randomObject.nextInt(numFound));
 					if(!savedURLs.contains(classURL)) {
 						savedURLs.add(classURL);
+						counter++;
 						break;
 					}
 				}
-			})
-		);
+			}
 
-		// savedURLs.forEach(System.out::println);
+			UsefulThings.generateProgressBar(counter, SAMPLE_SIZE);
 
-		UsefulThings.printSetToFile(savedURLs, "java_output/final_URL_list.txt");
+			UsefulThings.printDataStructureToFile(savedURLs, "java_output/final_URL_list.txt");
+		}
 	}
 }

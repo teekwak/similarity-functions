@@ -6,12 +6,24 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class UsefulThings {
-	public static <T> void printSetToFile(Set<T> set, String fileName) {
+	public static <T> void printDataStructureToFile(Set<T> set, String fileName) {
 		try(PrintWriter pw = new PrintWriter(new FileOutputStream(fileName, true))) {
 			set.forEach(obj -> pw.write(obj.toString() + "\n"));
+			pw.flush();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static <T> void printDataStructureToFile(List<T> list, String fileName) {
+		try(PrintWriter pw = new PrintWriter(new FileOutputStream(fileName, true))) {
+			list.forEach(obj -> pw.write(obj.toString() + "\n"));
 			pw.flush();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -44,5 +56,12 @@ public class UsefulThings {
 		sb.append(maxCount);
 
 		System.out.print(sb.toString());
+	}
+
+	public static <K, V> Map<K, V> parseValuesFromCSVFileToMap() {
+		Map<K, V> map = new LinkedHashMap<K, V>();
+
+
+		return map;
 	}
 }
