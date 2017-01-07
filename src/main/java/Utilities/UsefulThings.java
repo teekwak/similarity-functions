@@ -1,15 +1,10 @@
 package Utilities;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public class UsefulThings {
 	public static <T> void printDataStructureToFile(Set<T> set, String fileName) {
@@ -63,5 +58,57 @@ public class UsefulThings {
 
 
 		return map;
+	}
+
+	public static boolean uniqueLines(File file) {
+		try(BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file)))) {
+			Set<String> lines = new HashSet<>();
+
+			for(String line; (line = br.readLine()) != null;) {
+				if(lines.contains(line)) {
+					return false;
+				}
+
+				lines.add(line);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		return true;
+	}
+
+	public static void findValidURLs(String fileName) {
+		File file = new File(fileName);
+
+		int nonvalidURLCount = 0;
+		int counter = 0;
+		int maxCount = 146200;
+
+		try(BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
+			for(String line; (line = br.readLine()) != null; ) {
+				try {
+					counter++;
+					generateProgressBar(counter, maxCount);
+
+					URL url = new URL(line);
+					BufferedReader gbr = new BufferedReader(new InputStreamReader(url.openStream(), "UTF-8"));
+
+					int fileCounter = 0;
+					for(String javaLine; (javaLine = gbr.readLine()) != null; ) {
+						if(fileCounter > 0) {
+							break;
+						}
+						fileCounter++;
+					}
+				} catch (IOException e) {
+					nonvalidURLCount++;
+				}
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		System.out.println("Nonvalid url count: " + nonvalidURLCount);
 	}
 }

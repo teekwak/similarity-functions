@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>teekwak</groupId>
-    <artifactId>similarityfunctions</artifactId>
+    <artifactId>urlgenerator</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <properties>

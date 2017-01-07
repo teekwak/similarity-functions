@@ -7,10 +7,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLEncoder;
+import java.net.*;
 import java.util.*;
 
 /**
@@ -137,6 +134,11 @@ public class SampleURLGenerator {
 		final int finalPopulationSize = populationSize; // damn you lambda expressions
 
 		// sort by highest decimal to lowest decimal
+
+		// todo
+		// we got a problem
+		// what if we round up, but thehre arent that many things in the bin?
+		// is there a way to check this?
 		PriorityQueue<Integer> binPercentagesByDecimal = new PriorityQueue<>(
 			(a, b) -> {
 				double firstDecimal = (double)bins.get(a).size() / finalPopulationSize;
@@ -177,13 +179,14 @@ public class SampleURLGenerator {
 	// simple random sampling
 	private static void addUniqueURLsFromBin(String schemaKey, Bin bin, int amount) {
 		int counter = 0;
+		int attempt = 0;
 		String server = "grok.ics.uci.edu";
 		while(counter < amount) {
 			int rand = randomObject.nextInt(bin.size());
 			int index = 0;
 
 			for(Map.Entry<String, Integer> entry : bin.getMapping().entrySet()) {
-				if(rand < index) {
+				if(rand <= index) {
 					String classURL;
 					if(schemaKey.equals("snippet_author_name") || schemaKey.equals("snippet_project_owner")) {
 						String newKey = "\"" + entry.getKey() + "\"";
@@ -195,11 +198,24 @@ public class SampleURLGenerator {
 						classURL = queryForURL(server, schemaKey, entry.getKey(), randomObject.nextInt(numFound));
 					}
 
-					if(!savedURLs.contains(classURL)) {
-						savedURLs.add(classURL);
-						counter++;
+					attempt++;
+					System.out.print("\rAttempt: " + attempt);
 
-						UsefulThings.generateProgressBar(counter, amount);
+					if(!savedURLs.contains(classURL)) {
+						try {
+							URL urlObj = new URL(classURL);
+							HttpURLConnection con = (HttpURLConnection) urlObj.openConnection();
+							con.setRequestMethod("GET");
+							con.setConnectTimeout(3000);
+							con.connect();
+
+							if(con.getResponseCode() == 200) {
+								savedURLs.add(classURL);
+								counter++;
+							}
+						} catch (IOException e) {
+							// do nothing
+						}
 					}
 
 					break;
@@ -208,8 +224,6 @@ public class SampleURLGenerator {
 				index += entry.getValue();
 			}
 		}
-
-		UsefulThings.generateProgressBar(counter, amount);
 	}
 
 	private static Map<String, Integer> populateWithCSVFile(String fileName) {
@@ -301,30 +315,32 @@ public class SampleURLGenerator {
 
 	// start
 	private static void init() {
+		// true = bounded
+		// false = unbounded
 		Map<String, Boolean> schemaKeys = new HashMap<>();
 		{
-//			schemaKeys.put("snippet_imports", true);
-//			schemaKeys.put("snippet_variable_names", true);
-//			schemaKeys.put("snippet_class_name", true);
-//			schemaKeys.put("snippet_author_name", true);
-//			schemaKeys.put("snippet_project_name", true);
+			schemaKeys.put("snippet_imports", true);
+			schemaKeys.put("snippet_variable_names", true);
+			schemaKeys.put("snippet_class_name", true);
+			schemaKeys.put("snippet_author_name", true);
+			schemaKeys.put("snippet_project_name", true);
 			schemaKeys.put("snippet_method_invocation_names", true);
-//			schemaKeys.put("snippet_method_dec_names", true);
-//			schemaKeys.put("snippet_size", true);
-//			schemaKeys.put("snippet_imports_count", true);
-//			schemaKeys.put("snippet_complexity_density", true);
-//			schemaKeys.put("snippet_extends", true);
-//			schemaKeys.put("snippet_package", true);
-//			schemaKeys.put("snippet_number_of_fields", true);
-//			schemaKeys.put("snippet_is_generic", false); // fails because of FD calculation
-//			schemaKeys.put("snippet_is_abstract", false); // fails because of FD calculation
-//			schemaKeys.put("snippet_is_wildcard", false); // fails because of FD calculation
-//			schemaKeys.put("snippet_project_owner", true);
+			schemaKeys.put("snippet_method_dec_names", true);
+			schemaKeys.put("snippet_size", true);
+			schemaKeys.put("snippet_imports_count", true);
+			schemaKeys.put("snippet_complexity_density", true);
+			schemaKeys.put("snippet_extends", true);
+			schemaKeys.put("snippet_package", true);
+			schemaKeys.put("snippet_number_of_fields", true);
+			schemaKeys.put("snippet_is_generic", false); // fails because of FD calculation
+			schemaKeys.put("snippet_is_abstract", false); // fails because of FD calculation
+			schemaKeys.put("snippet_is_wildcard", false); // fails because of FD calculation
+			schemaKeys.put("snippet_project_owner", true);
 		}
 
 		for(Map.Entry<String, Boolean> entry : schemaKeys.entrySet()) {
 			String schemaKey = entry.getKey();
-			System.out.println("Running " + schemaKey);
+			System.out.println("\nRunning " + schemaKey);
 
 			Map<String, Integer> fieldToOccurrenceMap = Statistics.sortByValue(populateWithCSVFile(schemaKey));
 
