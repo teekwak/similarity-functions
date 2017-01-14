@@ -2,6 +2,7 @@ package DataAnalysis;
 
 import java.io.*;
 import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -14,7 +15,37 @@ class SimilarityFunctionTime {
 	private long uploadStartTime;
 	private long uploadEndTime;
 
+	SimilarityFunctionTime(String bv) {
+		this.bitvector = bv;
+	}
 
+	String getBitvector() {
+		return this.bitvector;
+	}
+
+	void setTechnicalStartTime(long time) {
+		this.technicalStartTime = time;
+	}
+
+	void setTechnicalEndTime(long time) {
+		this.technicalEndTime = time;
+	}
+
+	void setSocialStartTime(long time) {
+		this.socialStartTime = time;
+	}
+
+	void setSocialEndTime(long time) {
+		this.socialEndTime = time;
+	}
+
+	void setUploadStartTime(long time) {
+		this.uploadStartTime = time;
+	}
+
+	void setUploadEndTime(long time) {
+		this.uploadEndTime = time;
+	}
 }
 
 class ProjectTime {
@@ -27,6 +58,11 @@ class ProjectTime {
 
 	ProjectTime(String u) {
 		this.url = u;
+		this.similarityFunctionTimes = new HashMap<>();
+	}
+
+	String getURL() {
+		return this.url;
 	}
 
 	void setProcessStartTime(long time) {
@@ -43,6 +79,10 @@ class ProjectTime {
 
 	void setCloningEndTime(long time) {
 		this.cloningEndTime = time;
+	}
+
+	void addSimilarityFunctionTime(SimilarityFunctionTime sft) {
+		similarityFunctionTimes.put(sft.getBitvector(), sft);
 	}
 
 	long getProcessTotalTime() {
@@ -78,12 +118,26 @@ public class TimesReader {
 				else if(line.startsWith("Finished cloning")) {
 					projectTime.setCloningEndTime(Long.parseLong(line.split("::")[1]));
 				}
-//				else if(line.startsWith("Started technical")) {
-//
-//				}
-//				else if(line.startsWith("Started process::")) {
-//
-//				}
+				else if(line.startsWith("Started technical")) {
+					similarityFunctionTime = new SimilarityFunctionTime(line.split("::|\\$\\$")[1]);
+					similarityFunctionTime.setTechnicalStartTime(Long.parseLong(line.split("::|\\$\\$")[2]));
+				}
+				else if(line.startsWith("Finished technical")) {
+					similarityFunctionTime.setTechnicalEndTime(Long.parseLong(line.split("::|\\$\\$")[2]));
+				}
+				else if(line.startsWith("Started social")) {
+					similarityFunctionTime.setSocialStartTime(Long.parseLong(line.split("::|\\$\\$")[2]));
+				}
+				else if(line.startsWith("Finished social")) {
+					similarityFunctionTime.setSocialEndTime(Long.parseLong(line.split("::|\\$\\$")[2]));
+				}
+				else if(line.startsWith("Started uploading")) {
+					similarityFunctionTime.setUploadStartTime(Long.parseLong(line.split("::|\\$\\$")[2]));
+				}
+				else if(line.startsWith("Finished uploading")) {
+					similarityFunctionTime.setUploadEndTime(Long.parseLong(line.split("::|\\$\\$")[2]));
+					projectTime.addSimilarityFunctionTime(similarityFunctionTime);
+				}
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -105,8 +159,16 @@ public class TimesReader {
 		}
 
 
+		// random printing times
+		long totalProcessTime = 0;
+		long totalCloningTime = 0;
 		for(ProjectTime pt : projectTimes) {
-			System.out.println(pt.getProcessTotalTime() / 1000);
+			totalProcessTime += pt.getProcessTotalTime();
+			totalCloningTime += pt.getCloningTotalTime();
 		}
+
+		System.out.println("Total number of observations: " + projectTimes.size());
+		System.out.println("Average time to process: " + (totalProcessTime / projectTimes.size() / 1000) + "s");
+		System.out.println("Average time to clone: " + (totalCloningTime / projectTimes.size() / 1000) + "s");
 	}
 }
