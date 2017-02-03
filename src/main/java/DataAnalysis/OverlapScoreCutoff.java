@@ -50,7 +50,7 @@ public class OverlapScoreCutoff {
 		}
 	}
 
-	public static void filterSimilarityFunctionsByCutoff(double lowerBound, File overlapScoreFile) {
+	public static void filterSimilarityFunctionsByCutoff(double lowerBound, double upperBound, File overlapScoreFile) {
 		try(BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(overlapScoreFile), "UTF-8"))) {
 			for(String line; (line = br.readLine()) != null; ) {
 				String[] splitLine = line.split("_");
@@ -60,7 +60,7 @@ public class OverlapScoreCutoff {
 				}
 
 				// if number is equal to or greater than lower bound
-				if(Double.compare(Double.parseDouble(splitLine[1]), lowerBound) != -1) {
+				if(Double.compare(Double.parseDouble(splitLine[1]), lowerBound) != -1 && Double.compare(Double.parseDouble(splitLine[1]), upperBound) == -1) {
 					passingSimilarityFunctions.put(splitLine[0], Double.parseDouble(splitLine[1]));
 				}
 			}
@@ -74,17 +74,21 @@ public class OverlapScoreCutoff {
 		System.out.println("a) Lower Bound");
 		System.out.println("b) Specific Properties");
 		System.out.println("c) Lower Bound + Specific Properties");
+		System.out.println("d) Lower Bound + Least Number of Properties");
+		System.out.println("e) Lower Bound + Upper Bound");
 		System.out.print("Response: ");
 
 		Scanner sc = new Scanner(System.in);
 		String ans = sc.nextLine();
 
-		while(!ans.equals("a") && !ans.equals("b") && !ans.equals("c")) {
+		while(!ans.equals("a") && !ans.equals("b") && !ans.equals("c") && !ans.equals("d") && !ans.equals("e")) {
 			System.out.println("[ERROR]: Invalid choice\n");
 			System.out.println("Choose the type of search");
 			System.out.println("a) Lower Bound");
 			System.out.println("b) Specific Properties");
 			System.out.println("c) Lower Bound + Specific Properties");
+			System.out.println("d) Lower Bound + Least Number of Properties");
+			System.out.println("e) Lower Bound + Upper Bound");
 			System.out.print("Response: ");
 			ans = sc.nextLine();
 		}
@@ -128,7 +132,7 @@ public class OverlapScoreCutoff {
 				System.out.print("Enter a lower bound for overlap score: ");
 				Scanner sc = new Scanner(System.in);
 				double input = Double.parseDouble(sc.nextLine());
-				filterSimilarityFunctionsByCutoff(input, overlapScoreFile);
+				filterSimilarityFunctionsByCutoff(input, 1.1, overlapScoreFile);
 				printPassingSimilarityFunctions();
 				break;
 			}
@@ -151,7 +155,7 @@ public class OverlapScoreCutoff {
 				System.out.print("Enter a lower bound for overlap score: ");
 				Scanner sc = new Scanner(System.in);
 				double input = Double.parseDouble(sc.nextLine());
-				filterSimilarityFunctionsByCutoff(input, overlapScoreFile);
+				filterSimilarityFunctionsByCutoff(input, 1.1, overlapScoreFile);
 
 				System.out.println("\nType a similarity function with 1's and X's");
 				System.out.println("1 denotes that we will search for that property");
@@ -165,6 +169,50 @@ public class OverlapScoreCutoff {
 				removeSimilarityFunctionsByString(inputFunction);
 				printPassingSimilarityFunctions();
 
+				break;
+			}
+			case "d": {
+				System.out.print("Enter a lower bound for overlap score: ");
+				Scanner sc = new Scanner(System.in);
+				double input = Double.parseDouble(sc.nextLine());
+				filterSimilarityFunctionsByCutoff(input, 1.1, overlapScoreFile);
+
+				Map<String, Double> smallestSimilarityFunctions = new HashMap<>();
+				int minSize = 17;
+
+				for(Map.Entry<String, Double> entry : passingSimilarityFunctions.entrySet()) {
+					int size = 0;
+					for(int i = 0; i < 17; i++) {
+						if(entry.getKey().charAt(i) == '1') {
+							size++;
+						}
+					}
+
+					if(size == minSize) {
+						smallestSimilarityFunctions.put(entry.getKey(), entry.getValue());
+					}
+					else if(size < minSize) {
+						smallestSimilarityFunctions.clear();
+						smallestSimilarityFunctions.put(entry.getKey(), entry.getValue());
+						minSize = size;
+					}
+				}
+
+				passingSimilarityFunctions = smallestSimilarityFunctions;
+				printPassingSimilarityFunctions();
+
+				break;
+			}
+			case "e": {
+				System.out.print("Enter a lower bound for overlap score: ");
+				Scanner sc = new Scanner(System.in);
+				double lowerBound = Double.parseDouble(sc.nextLine());
+
+				System.out.print("Enter an upper bound for overlap score: ");
+				sc = new Scanner(System.in);
+				double upperBound = Double.parseDouble(sc.nextLine());
+				filterSimilarityFunctionsByCutoff(lowerBound, upperBound, overlapScoreFile);
+				printPassingSimilarityFunctions();
 				break;
 			}
 			default:
