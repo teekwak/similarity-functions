@@ -120,6 +120,10 @@ class ProjectTime {
 		return this.cloningEndTime - this.cloningStartTime;
 	}
 
+	long getProcessEndTime() {
+		return this.processEndTime;
+	}
+
 	Map<String, SimilarityFunctionRecord> getSimilarityFunctionRecords() {
 		return this.similarityFunctionRecords;
 	}
@@ -162,6 +166,7 @@ class ProjectTime {
 
 public class TimesReader {
 	private static Set<ProjectTime> projectTimes;
+	private static Set<String> invalidURLs;
 	private static ProjectTime projectTime;
 	private static SimilarityFunctionRecord similarityFunctionRecord;
 
@@ -169,13 +174,22 @@ public class TimesReader {
 		try(BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file), "UTF-8"))) {
 			for(String line; (line = br.readLine()) != null; ) {
 				if(line.startsWith("URL")) {
-					projectTime = new ProjectTime(line.split("::")[1]);
+					try {
+						if(projectTime != null) {
+							invalidURLs.add(projectTime.getURL());
+							projectTime = null;
+						}
+
+						projectTime = new ProjectTime(line.split("::")[1]);
+					} catch (ArrayIndexOutOfBoundsException e) {
+						invalidURLs.add(line);
+					}
 				}
 				else if(line.startsWith("Started process")) {
 					try {
 						projectTime.setProcessStartTime(Long.parseLong(line.split("::")[1]));
 					} catch (ArrayIndexOutOfBoundsException e) {
-						// do nothing
+						invalidURLs.add(projectTime.getURL());
 					}
 				}
 				else if(line.startsWith("Finished process")) {
@@ -184,52 +198,72 @@ public class TimesReader {
 
 						if(projectTime.isValid()) {
 							projectTimes.add(projectTime);
+							projectTime = null;
+						}
+						else {
+							invalidURLs.add(projectTime.getURL());
 						}
 					} catch (ArrayIndexOutOfBoundsException e) {
-						// do nothing
+						invalidURLs.add(projectTime.getURL());
 					}
 				}
 				else if(line.startsWith("Started cloning")) {
-					projectTime.setCloningStartTime(Long.parseLong(line.split("::")[1]));
+					try {
+						projectTime.setCloningStartTime(Long.parseLong(line.split("::")[1]));
+					} catch (ArrayIndexOutOfBoundsException e) {
+						invalidURLs.add(projectTime.getURL());
+					}
 				}
 				else if(line.startsWith("Finished cloning")) {
-					projectTime.setCloningEndTime(Long.parseLong(line.split("::")[1]));
+					try {
+						projectTime.setCloningEndTime(Long.parseLong(line.split("::")[1]));
+					} catch (ArrayIndexOutOfBoundsException e) {
+						invalidURLs.add(projectTime.getURL());
+					}
 				}
 				else if(line.startsWith("Started technical")) {
-					similarityFunctionRecord = new SimilarityFunctionRecord(line.split("::|\\$\\$")[1]);
-					similarityFunctionRecord.setTechnicalStartTime(Long.parseLong(line.split("::|\\$\\$")[2]));
+					try {
+						similarityFunctionRecord = new SimilarityFunctionRecord(line.split("::|\\$\\$")[1]);
+						similarityFunctionRecord.setTechnicalStartTime(Long.parseLong(line.split("::|\\$\\$")[2]));
+					} catch (ArrayIndexOutOfBoundsException e) {
+						invalidURLs.add(projectTime.getURL());
+					}
 				}
 				else if(line.startsWith("Finished technical")) {
 					try {
 						similarityFunctionRecord.setTechnicalEndTime(Long.parseLong(line.split("::|\\$\\$")[2]));
 					} catch (ArrayIndexOutOfBoundsException e) {
-						// do nothing
+						invalidURLs.add(projectTime.getURL());
 					}
 				}
 				else if(line.startsWith("Started social")) {
 					try {
 						similarityFunctionRecord.setSocialStartTime(Long.parseLong(line.split("::|\\$\\$")[2]));
 					} catch (ArrayIndexOutOfBoundsException e) {
-						// do nothing
+						invalidURLs.add(projectTime.getURL());
 					}
 				}
 				else if(line.startsWith("Finished social")) {
 					try {
 						similarityFunctionRecord.setSocialEndTime(Long.parseLong(line.split("::|\\$\\$")[2]));
 					} catch (ArrayIndexOutOfBoundsException e) {
-						// do nothing
+						invalidURLs.add(projectTime.getURL());
 					}
 				}
 				else if(line.startsWith("Started uploading")) {
 					try {
 						similarityFunctionRecord.setUploadStartTime(Long.parseLong(line.split("::|\\$\\$")[2]));
 					} catch (ArrayIndexOutOfBoundsException e) {
-						// do nothing
+						invalidURLs.add(projectTime.getURL());
 					}
 				}
 				else if(line.startsWith("Finished uploading")) {
-					similarityFunctionRecord.setUploadEndTime(Long.parseLong(line.split("::|\\$\\$")[2]));
-					projectTime.addSimilarityFunctionTime(similarityFunctionRecord);
+					try {
+						similarityFunctionRecord.setUploadEndTime(Long.parseLong(line.split("::|\\$\\$")[2]));
+						projectTime.addSimilarityFunctionTime(similarityFunctionRecord);
+					} catch (ArrayIndexOutOfBoundsException e) {
+						invalidURLs.add(projectTime.getURL());
+					}
 				}
 			}
 		} catch (IOException e) {
@@ -237,8 +271,57 @@ public class TimesReader {
 		}
 	}
 
+	public static void projectsPerUnitOfTime(String unit, boolean cumulative, long startTime, int numberOfUnits) {
+		int millisecondsInUnitOfTime = 0;
+		switch(unit) {
+			case "day":
+				millisecondsInUnitOfTime = 1000 * 60 * 60 * 24;
+				break;
+			case "hour":
+				millisecondsInUnitOfTime = 1000 * 60 * 60;
+				break;
+			case "minute":
+				millisecondsInUnitOfTime = 1000 * 60;
+				break;
+			default:
+				throw new IllegalArgumentException("[ERROR]: unit of time given was not \"day\", \"hour\", or \"minute\"");
+		}
+
+
+
+		Map<Integer, Integer> projectsCompletedPerUnitOfTime = new HashMap<>();
+		for(int i = 1; i <= numberOfUnits; i++) {
+			projectsCompletedPerUnitOfTime.put(i, 0);
+		}
+
+		for(ProjectTime pt : projectTimes) {
+			int currentUnit = 1;
+			while(currentUnit <= numberOfUnits) {
+				if(pt.getProcessEndTime() <= startTime + (currentUnit * millisecondsInUnitOfTime)) {
+					int currentValue = projectsCompletedPerUnitOfTime.get(currentUnit);
+					projectsCompletedPerUnitOfTime.put(currentUnit, currentValue + 1);
+					break;
+				}
+				currentUnit++;
+			}
+		}
+
+		if(cumulative) {
+			for(int i = 2; i <= numberOfUnits; i++) {
+				if(i > projectsCompletedPerUnitOfTime.size()) break;
+
+
+				int currentValue = projectsCompletedPerUnitOfTime.get(i);
+				projectsCompletedPerUnitOfTime.put(i, projectsCompletedPerUnitOfTime.get(i - 1) + currentValue);
+			}
+		}
+
+		projectsCompletedPerUnitOfTime.forEach((k, v) -> System.out.println(k + " -> " + v));
+	}
+
 	public static void main(String[] args) {
 		projectTimes = new HashSet<>();
+		invalidURLs = new HashSet<>();
 
 		int fileCounter = 0;
 		File topDirectory = new File("times/");
@@ -276,6 +359,7 @@ public class TimesReader {
 
 		System.out.println("Number of files read: " + fileCounter);
 		System.out.println("Total number of observations: " + projectTimes.size());
+		System.out.println("Total number of invalid URLS: " + invalidURLs.size());
 		System.out.println("Total time to clone: " + (totalCloningTime / 1000) + "s");
 		System.out.println("Total time to process: " + (totalProcessTime / 1000) + "s");
 		System.out.println();
@@ -331,6 +415,30 @@ public class TimesReader {
 
 		processTimeForSimFunc.forEach((k, v) -> System.out.println("Total time for " + simFuncToName.get(k) + ": " + v / 1000 + "s"));
 
+//		System.out.println();
+//		System.out.println("Invalid URLs");
+//		invalidURLs.forEach(System.out::println);
+
+		for(ProjectTime pt : projectTimes) {
+			if(pt.getURL().equals("https://raw.github.com/andmar8/Panopto-Java-Axis/d25e7d7b3d312e8aea9f7f3aaf311a5d6edeeb32/src/com/panopto/session/SessionManagementStub.java?start=2843945&end=2859999")) {
+				System.out.println(pt.isValid());
+				for(SimilarityFunctionRecord sfr : pt.getSimilarityFunctionRecords().values()) {
+					System.out.println(sfr.getProcessTotalTime());
+				}
+			}
+		}
+
+		// these functions show how many projects were uploaded in X time units
+		System.out.println();
+		projectsPerUnitOfTime("day", false, 1485569280000L, 5);
+		System.out.println();
+		projectsPerUnitOfTime("hour", false, 1485569280000L, 120);
+
+		// maybe create functions that are cumulative
+		System.out.println();
+		projectsPerUnitOfTime("day", true, 1485569280000L, 5);
+		System.out.println();
+		projectsPerUnitOfTime("hour", true, 1485569280000L, 120);
 
 
 
@@ -361,30 +469,30 @@ public class TimesReader {
 //		);
 
 
-//		Set<String> bitvectors = new HashSet<>(
-////			Arrays.asList(
-////				"10000000000000000",
-////				"01000000000000000",
-////				"00100000000000000",
-////				"00010000000000000",
-////				"00001000000000000",
-////				"00000100000000000",
-////				"00000010000000000",
-////				"00000001000000000",
-////				"00000000100000000",
-////				"00000000010000000",
-////				"00000000001000000",
-////				"00000000000100000",
-////				"00000000000010000",
-////				"00000000000001000",
-////				"00000000000000100",
-////				"00000000000000010",
-////				"00000000000000001"
-////			)
-//				Arrays.asList(
-//								"00001000110010001"
-//				)
-//		);
+		Set<String> bitvectors = new HashSet<>(
+//			Arrays.asList(
+//				"10000000000000000",
+//				"01000000000000000",
+//				"00100000000000000",
+//				"00010000000000000",
+//				"00001000000000000",
+//				"00000100000000000",
+//				"00000010000000000",
+//				"00000001000000000",
+//				"00000000100000000",
+//				"00000000010000000",
+//				"00000000001000000",
+//				"00000000000100000",
+//				"00000000000010000",
+//				"00000000000001000",
+//				"00000000000000100",
+//				"00000000000000010",
+//				"00000000000000001"
+//			)
+				Arrays.asList(
+					"11111111111111111"
+				)
+		);
 
 
 
@@ -395,11 +503,11 @@ public class TimesReader {
 //
 //				bw.write(bv + ",\n");
 //				for(ProjectTime project : projectTimes) {
-//					for(int i = 0; i < bv.length(); i++) {
-//						if(bv.charAt(i) == '1') {
-//							cumulativeTime += (double)project.getSimilarityFunctionRecord(singleBitvectors.get(i)).getProcessTotalTime() / 1000 / 60;
-//						}
-//					}
+////					for(int i = 0; i < bv.length(); i++) {
+////						if(bv.charAt(i) == '1') {
+////							cumulativeTime += (double)project.getSimilarityFunctionRecord(singleBitvectors.get(i)).getProcessTotalTime() / 1000 / 60;
+////						}
+////					}
 //
 //					bw.write(cumulativeTime + ",\n");
 //				}
@@ -421,6 +529,11 @@ public class TimesReader {
 //
 //			System.out.println(bv + " -> " + cumulativeTime);
 //		}
+
+
+		// print per day
+
+		// print per hour
 
 	}
 }
