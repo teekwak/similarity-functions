@@ -3,6 +3,24 @@ package DataAnalysis;
 import java.io.*;
 import java.util.*;
 
+class DataPoint {
+	private double accuracy;
+	private double time;
+
+	DataPoint(double a, double t) {
+		this.accuracy = a;
+		this.time = t;
+	}
+
+	double getAccuracy() {
+		return this.accuracy;
+	}
+
+	double getTime() {
+		return this.time;
+	}
+}
+
 class SimilarityFunctionRecord {
 	private String bitvector;
 	private long technicalStartTime;
@@ -271,8 +289,8 @@ public class TimesReader {
 		}
 	}
 
-	public static void projectsPerUnitOfTime(String unit, boolean cumulative, long startTime, int numberOfUnits) {
-		int millisecondsInUnitOfTime = 0;
+	private static Map<Integer, Integer> projectsPerUnitOfTime(String unit, boolean cumulative, long startTime, int numberOfUnits) {
+		int millisecondsInUnitOfTime;
 		switch(unit) {
 			case "day":
 				millisecondsInUnitOfTime = 1000 * 60 * 60 * 24;
@@ -286,8 +304,6 @@ public class TimesReader {
 			default:
 				throw new IllegalArgumentException("[ERROR]: unit of time given was not \"day\", \"hour\", or \"minute\"");
 		}
-
-
 
 		Map<Integer, Integer> projectsCompletedPerUnitOfTime = new HashMap<>();
 		for(int i = 1; i <= numberOfUnits; i++) {
@@ -316,19 +332,18 @@ public class TimesReader {
 			}
 		}
 
-		projectsCompletedPerUnitOfTime.forEach((k, v) -> System.out.println(k + " -> " + v));
+		// projectsCompletedPerUnitOfTime.forEach((k, v) -> System.out.println(k + " -> " + v));
+
+		return projectsCompletedPerUnitOfTime;
 	}
 
-	public static void main(String[] args) {
-		projectTimes = new HashSet<>();
-		invalidURLs = new HashSet<>();
-
+	private static void processFiles(String fileStartName) {
 		int fileCounter = 0;
 		File topDirectory = new File("times/");
 		File[] files = topDirectory.listFiles();
 		if(files != null) {
 			for(File file : files) {
-				if(file.getName().endsWith("_times.txt")) {
+				if(file.getName().startsWith(fileStartName) && file.getName().endsWith("_times.txt")) {
 					fileCounter++;
 					parseTimesFromFile(file);
 					System.out.print("\rProcessed " + fileCounter + " files");
@@ -336,18 +351,7 @@ public class TimesReader {
 			}
 		}
 
-		System.out.print("\rFinished processing all files\n\n");
-
-		// duplicate project check
-		Set<String> urls = new HashSet<>();
-		for(ProjectTime pt : projectTimes) {
-			if(urls.contains(pt.getURL())) {
-				System.out.println("Duplicate found! " + pt.getURL());
-			}
-			else {
-				urls.add(pt.getURL());
-			}
-		}
+		System.out.print("\rFinished processing all " + fileStartName + " files\n\n");
 
 		// random printing times
 		long totalProcessTime = 0;
@@ -357,13 +361,131 @@ public class TimesReader {
 			totalCloningTime += pt.getCloningTotalTime();
 		}
 
-		System.out.println("Number of files read: " + fileCounter);
-		System.out.println("Total number of observations: " + projectTimes.size());
-		System.out.println("Total number of invalid URLS: " + invalidURLs.size());
-		System.out.println("Total time to clone: " + (totalCloningTime / 1000) + "s");
-		System.out.println("Total time to process: " + (totalProcessTime / 1000) + "s");
-		System.out.println();
+//		System.out.println("Number of files read: " + fileCounter);
+//		System.out.println("Total number of observations: " + projectTimes.size());
+//		System.out.println("Total number of invalid URLS: " + invalidURLs.size());
+//		System.out.println("Total time to clone: " + (totalCloningTime / 1000) + "s");
+//		System.out.println("Total time to process: " + (totalProcessTime / 1000) + "s");
+//		System.out.println();
+	}
 
+	private static void removeInvalidProjectTimes() {
+		Set<ProjectTime> validSet = new HashSet<>();
+
+		for(ProjectTime pt : projectTimes) {
+			if(pt.getSimilarityFunctionRecords().size() == 17) {
+				validSet.add(pt);
+			}
+		}
+
+		projectTimes = validSet;
+	}
+
+	private static void removeDuplicateProjectTimes() {
+		Set<String> projectURLs = new HashSet<>();
+		Set<ProjectTime> validSet = new HashSet<>();
+
+		for(ProjectTime pt : projectTimes) {
+			if(!projectURLs.contains(pt.getURL())) {
+				projectURLs.add(pt.getURL());
+				validSet.add(pt);
+			}
+		}
+
+		projectTimes = validSet;
+	}
+
+	private static void accuracyVsTime() {
+		List<String> singleBitvectors = new ArrayList<>(
+						Arrays.asList(
+										"10000000000000000",
+										"01000000000000000",
+										"00100000000000000",
+										"00010000000000000",
+										"00001000000000000",
+										"00000100000000000",
+										"00000010000000000",
+										"00000001000000000",
+										"00000000100000000",
+										"00000000010000000",
+										"00000000001000000",
+										"00000000000100000",
+										"00000000000010000",
+										"00000000000001000",
+										"00000000000000100",
+										"00000000000000010",
+										"00000000000000001"
+						)
+		);
+
+		Map<String, DataPoint> accuracyVsTimeMap = new HashMap<>();
+
+		// generate all 131072 mutations
+		for(int i = 0; i < 131072; i++) {
+			try {
+				String unpadded = Integer.toBinaryString(i);
+				String padded = "00000000000000000".substring(unpadded.length()) + unpadded;
+				accuracyVsTimeMap.put(padded, null);
+			} catch (StringIndexOutOfBoundsException e) {
+				System.out.println(i);
+				e.printStackTrace();
+			}
+		}
+
+		Map<String, Double> overlapScores = new HashMap<>();
+		// store all overlap scores
+		try(BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream("saved/overlapScores_1478630814.txt"), "UTF-8"))) {
+			for(String line; (line = br.readLine()) != null; ) {
+				String[] splitLine = line.split("_");
+
+				overlapScores.put(splitLine[0], Double.parseDouble(splitLine[1]));
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		// get the cumulative time for each mutation and print to file
+		final int millisecondsPerDay = 1000 * 60 * 60 * 24;
+		int counter = 1;
+		for(String bv : accuracyVsTimeMap.keySet()) {
+			double cumulativeTime = 0;
+
+			for(ProjectTime project : projectTimes) {
+				for(int i = 0; i < bv.length(); i++) {
+					if(bv.charAt(i) == '1') {
+						cumulativeTime += (double)project.getSimilarityFunctionRecord(singleBitvectors.get(i)).getProcessTotalTime() / millisecondsPerDay;
+					}
+				}
+			}
+
+			accuracyVsTimeMap.put(bv, new DataPoint(overlapScores.get(bv), cumulativeTime));
+
+			System.out.print("\r Finished " + counter + " bitvector(s)");
+			counter++;
+		}
+
+		System.out.print("\r Finished all bitvectors. Printing...\n");
+
+		// print sim func to total process time
+		try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("simFuncToCumulativeTime.csv", true)))) {
+			for(Map.Entry<String, DataPoint> entry : accuracyVsTimeMap.entrySet()) {
+				bw.write(entry.getKey() + "," + entry.getValue().getTime() + ",\n");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+		// write data point to file
+		try (BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("accuracyVsTime.csv", true)))) {
+			for(DataPoint dp : accuracyVsTimeMap.values()) {
+				bw.write(dp.getAccuracy() + "," + dp.getTime() + ",\n");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public static void main(String[] args) {
 		Map<String, String> simFuncToName = new HashMap<>();
 		{
 			simFuncToName.put("10000000000000000", "import names");
@@ -385,7 +507,6 @@ public class TimesReader {
 			simFuncToName.put("00000000000000001", "project owner name");
 		}
 
-
 		Map<String, Long> processTimeForSimFunc = new LinkedHashMap<>();
 		{
 			processTimeForSimFunc.put("10000000000000000", 0L);
@@ -406,6 +527,33 @@ public class TimesReader {
 			processTimeForSimFunc.put("00000000000000010", 0L);
 			processTimeForSimFunc.put("00000000000000001", 0L);
 		}
+
+		projectTimes = new HashSet<>();
+		invalidURLs = new HashSet<>();
+
+		// pi processing
+		// todo: make the processFiles method have its own data structures so we can separate pi from ce
+		processFiles("pi");
+
+		removeInvalidProjectTimes();
+		System.out.println("Projects after removing invalid: " + projectTimes.size());
+
+		removeDuplicateProjectTimes();
+		System.out.println("Projects after removing duplicates: " + projectTimes.size());
+
+		Map<Integer, Integer> piProjectsPerHour = projectsPerUnitOfTime("hour", true, 1485569280000L, 120);
+
+		try(BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("times/pi_projects_per_hour.csv", true), "UTF-8"))) {
+			bw.write("Time (hours),Number of Projects,\n");
+			bw.write("0,0,\n");
+
+			for(Map.Entry<Integer, Integer> entry : piProjectsPerHour.entrySet()) {
+				bw.write(entry.getKey() + "," + entry.getValue() + ",\n");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
 		for(ProjectTime pt : projectTimes) {
 			for(Map.Entry<String, SimilarityFunctionRecord> entry : pt.getSimilarityFunctionRecords().entrySet()) {
 				long currentValue = processTimeForSimFunc.get(entry.getKey());
@@ -413,32 +561,58 @@ public class TimesReader {
 			}
 		}
 
-		processTimeForSimFunc.forEach((k, v) -> System.out.println("Total time for " + simFuncToName.get(k) + ": " + v / 1000 + "s"));
+//		processTimeForSimFunc.forEach((k, v) -> System.out.println("Total time for " + simFuncToName.get(k) + ": " + v / 1000 + "s"));
+
+		// CE processing
+//		processFiles("codeExchange");
+//		if(!duplicateCheck()) throw new IllegalArgumentException("There are duplicates in the CE files!");
+//
+//		Map<Integer, Integer> ceProjectsPerHour = projectsPerUnitOfTime("hour", true, 1485569280000L, 120);
+//
+//		try(BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("times/ce_projects_per_hour.csv", true), "UTF-8"))) {
+//			bw.write("Time (hours),Number of Projects,\n");
+//			bw.write("0,0,\n");
+//
+//			for(Map.Entry<Integer, Integer> entry : ceProjectsPerHour.entrySet()) {
+//				bw.write(entry.getKey() + "," + entry.getValue() + ",\n");
+//			}
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
+//
+//		for(ProjectTime pt : projectTimes) {
+//			for(Map.Entry<String, SimilarityFunctionRecord> entry : pt.getSimilarityFunctionRecords().entrySet()) {
+//				long currentValue = processTimeForSimFunc.get(entry.getKey());
+//				processTimeForSimFunc.put(entry.getKey(), currentValue + entry.getValue().getProcessTotalTime());
+//			}
+//		}
+//
+//		processTimeForSimFunc.forEach((k, v) -> System.out.println("Total time for " + simFuncToName.get(k) + ": " + v / 1000 + "s"));
+
+		// refactor below
+
+
+
+
+
 
 //		System.out.println();
 //		System.out.println("Invalid URLs");
 //		invalidURLs.forEach(System.out::println);
 
-		for(ProjectTime pt : projectTimes) {
-			if(pt.getURL().equals("https://raw.github.com/andmar8/Panopto-Java-Axis/d25e7d7b3d312e8aea9f7f3aaf311a5d6edeeb32/src/com/panopto/session/SessionManagementStub.java?start=2843945&end=2859999")) {
-				System.out.println(pt.isValid());
-				for(SimilarityFunctionRecord sfr : pt.getSimilarityFunctionRecords().values()) {
-					System.out.println(sfr.getProcessTotalTime());
-				}
-			}
-		}
-
 		// these functions show how many projects were uploaded in X time units
-		System.out.println();
-		projectsPerUnitOfTime("day", false, 1485569280000L, 5);
-		System.out.println();
-		projectsPerUnitOfTime("hour", false, 1485569280000L, 120);
+//		System.out.println();
+//		projectsPerUnitOfTime("day", false, 1485569280000L, 5);
+//		System.out.println();
+//		projectsPerUnitOfTime("hour", false, 1485569280000L, 120);
 
 		// maybe create functions that are cumulative
-		System.out.println();
-		projectsPerUnitOfTime("day", true, 1485569280000L, 5);
-		System.out.println();
-		projectsPerUnitOfTime("hour", true, 1485569280000L, 120);
+//		System.out.println();
+//		Map<Integer, Integer> projectsPerDay = projectsPerUnitOfTime("day", true, 1485569280000L, 5);
+//		System.out.println();
+
+
+
 
 
 
@@ -446,27 +620,27 @@ public class TimesReader {
 		// project number, cumulativeTime
 
 
-//		List<String> singleBitvectors = new ArrayList<>(
-//			Arrays.asList(
-//				"10000000000000000",
-//				"01000000000000000",
-//				"00100000000000000",
-//				"00010000000000000",
-//				"00001000000000000",
-//				"00000100000000000",
-//				"00000010000000000",
-//				"00000001000000000",
-//				"00000000100000000",
-//				"00000000010000000",
-//				"00000000001000000",
-//				"00000000000100000",
-//				"00000000000010000",
-//				"00000000000001000",
-//				"00000000000000100",
-//				"00000000000000010",
-//				"00000000000000001"
-//			)
-//		);
+		List<String> singleBitvectors = new ArrayList<>(
+			Arrays.asList(
+				"10000000000000000",
+				"01000000000000000",
+				"00100000000000000",
+				"00010000000000000",
+				"00001000000000000",
+				"00000100000000000",
+				"00000010000000000",
+				"00000001000000000",
+				"00000000100000000",
+				"00000000010000000",
+				"00000000001000000",
+				"00000000000100000",
+				"00000000000010000",
+				"00000000000001000",
+				"00000000000000100",
+				"00000000000000010",
+				"00000000000000001"
+			)
+		);
 
 
 		Set<String> bitvectors = new HashSet<>(
@@ -490,24 +664,29 @@ public class TimesReader {
 //				"00000000000000001"
 //			)
 				Arrays.asList(
-					"11111111111111111"
+								"00000000110010000",
+								"00000000100010000",
+								"00000000000010000"
 				)
 		);
 
 
 
+		accuracyVsTime();
 
+//		final int millisecondsPerDay = 1000 * 60 * 60 * 24;
+//
 //		for(String bv : bitvectors) {
-//			try(BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("times/" +bv + ".csv", true)))) {
+//			try(BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("times/" + bv + ".csv", true)))) {
 //				double cumulativeTime = 0;
 //
 //				bw.write(bv + ",\n");
 //				for(ProjectTime project : projectTimes) {
-////					for(int i = 0; i < bv.length(); i++) {
-////						if(bv.charAt(i) == '1') {
-////							cumulativeTime += (double)project.getSimilarityFunctionRecord(singleBitvectors.get(i)).getProcessTotalTime() / 1000 / 60;
-////						}
-////					}
+//					for(int i = 0; i < bv.length(); i++) {
+//						if(bv.charAt(i) == '1') {
+//							cumulativeTime += (double)project.getSimilarityFunctionRecord(singleBitvectors.get(i)).getProcessTotalTime() / millisecondsPerDay;
+//						}
+//					}
 //
 //					bw.write(cumulativeTime + ",\n");
 //				}
@@ -529,11 +708,5 @@ public class TimesReader {
 //
 //			System.out.println(bv + " -> " + cumulativeTime);
 //		}
-
-
-		// print per day
-
-		// print per hour
-
 	}
 }

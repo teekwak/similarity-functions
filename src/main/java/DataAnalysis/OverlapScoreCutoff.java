@@ -212,6 +212,15 @@ public class OverlapScoreCutoff {
 				sc = new Scanner(System.in);
 				double upperBound = Double.parseDouble(sc.nextLine());
 				filterSimilarityFunctionsByCutoff(lowerBound, upperBound, overlapScoreFile);
+
+//				try(BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("output.txt", true)))) {
+//					for(Map.Entry<String, Double> entry : passingSimilarityFunctions.entrySet()) {
+//						bw.write(entry.getKey() + " -> " + entry.getValue() + "\n");
+//					}
+//				} catch (IOException e) {
+//					e.printStackTrace();
+//				}
+
 				printPassingSimilarityFunctions();
 				break;
 			}
